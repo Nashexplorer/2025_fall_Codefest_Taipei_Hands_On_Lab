@@ -71,7 +71,7 @@ public class MealEvent
     [Column("tags", TypeName = "json")]
     public string? Tags { get; set; }
 
-    [Column("status")]
+    [Column("status", TypeName = "ENUM('open','closed','cancelled','full')")]
     [MaxLength(20)]
     public string Status { get; set; } = "open";
 

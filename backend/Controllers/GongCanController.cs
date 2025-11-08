@@ -127,72 +127,95 @@ public class GongCanController : ControllerBase
     // 商家相關 API
     // ============================================
 
-    /// <summary>
-    /// 商家上架共餐活動
-    /// </summary>
-    [HttpPost("meals")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
+/// <summary>
+/// 商家上架共餐活動
+/// </summary>
+[HttpPost("meals")]
+[ProducesResponseType(StatusCodes.Status201Created)]
+[ProducesResponseType(StatusCodes.Status409Conflict)]
+public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
+{
+    // 檢查 ID 是否已存在
+    var exists = await _db.MealEvents
+        .AnyAsync(m => m.Id == mealEvent.Id);
+
+    if (exists)
     {
-        // 檢查 ID 是否已存在
-        var exists = await _db.MealEvents
-            .AnyAsync(m => m.Id == mealEvent.Id);
-
-        if (exists)
-        {
-            return Conflict(new { Message = $"ID {mealEvent.Id} 的共餐活動已存在" });
-        }
-
-        // 設定預設值
-        if (mealEvent.CreatedAt == null)
-        {
-            mealEvent.CreatedAt = DateTime.UtcNow;
-        }
-        if (mealEvent.UpdatedAt == null)
-        {
-            mealEvent.UpdatedAt = DateTime.UtcNow;
-        }
-        if (string.IsNullOrEmpty(mealEvent.Status))
-        {
-            mealEvent.Status = "open";
-        }
-
-        _db.MealEvents.Add(mealEvent);
-        await _db.SaveChangesAsync();
-
-        // 轉換 tags JSON 字串為陣列
-        var result = new
-        {
-            mealEvent.Id,
-            mealEvent.Title,
-            mealEvent.Description,
-            mealEvent.ImageUrl,
-            mealEvent.Location,
-            mealEvent.Latitude,
-            mealEvent.Longitude,
-            mealEvent.HostUserId,
-            mealEvent.Capacity,
-            mealEvent.CurrentParticipants,
-            mealEvent.DietType,
-            mealEvent.IsDineIn,
-            mealEvent.StartTime,
-            mealEvent.EndTime,
-            mealEvent.SignupDeadline,
-            mealEvent.CreatedAt,
-            mealEvent.UpdatedAt,
-            Tags = string.IsNullOrEmpty(mealEvent.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(mealEvent.Tags) ?? new List<string>(),
-            mealEvent.Status,
-            mealEvent.Notes,
-            mealEvent.Reserved1,
-            mealEvent.Reserved2,
-            mealEvent.Reserved3,
-            mealEvent.Reserved4,
-            mealEvent.Reserved5
-        };
-
-        return Created($"/api/gongcan/meals/{mealEvent.Id}", result);
+        return Conflict(new { Message = $"ID {mealEvent.Id} 的共餐活動已存在" });
     }
+
+    // 設定預設值
+    mealEvent.CreatedAt ??= DateTime.UtcNow;
+    mealEvent.UpdatedAt ??= DateTime.UtcNow;
+
+    // status 不可超過 20 字元，預設 "open"
+    if (string.IsNullOrEmpty(mealEvent.Status))
+    {
+        mealEvent.Status = "open";
+    }
+    else if (mealEvent.Status.Length > 20)
+    {
+        mealEvent.Status = mealEvent.Status.Substring(0, 20); // 截斷到 20 個字元
+    }
+
+    // tags 若為空或非合法 JSON，預設為空陣列 JSON
+    if (string.IsNullOrEmpty(mealEvent.Tags))
+    {
+        mealEvent.Tags = "[]";
+    }
+    else
+    {
+        try
+        {
+            // 嘗試解析 JSON，若失敗則改成空陣列
+            var parsed = System.Text.Json.JsonSerializer.Deserialize<List<string>>(mealEvent.Tags);
+            if (parsed == null)
+            {
+                mealEvent.Tags = "[]";
+            }
+        }
+        catch
+        {
+            mealEvent.Tags = "[]";
+        }
+    }
+
+    _db.MealEvents.Add(mealEvent);
+    await _db.SaveChangesAsync();
+
+    // 回傳結果（轉換 tags JSON 字串為陣列）
+    var result = new
+    {
+        mealEvent.Id,
+        mealEvent.Title,
+        mealEvent.Description,
+        mealEvent.ImageUrl,
+        mealEvent.Location,
+        mealEvent.Latitude,
+        mealEvent.Longitude,
+        mealEvent.HostUserId,
+        mealEvent.Capacity,
+        mealEvent.CurrentParticipants,
+        mealEvent.DietType,
+        mealEvent.IsDineIn,
+        mealEvent.StartTime,
+        mealEvent.EndTime,
+        mealEvent.SignupDeadline,
+        mealEvent.CreatedAt,
+        mealEvent.UpdatedAt,
+        Tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(mealEvent.Tags)!,
+        mealEvent.Status,
+        mealEvent.Notes,
+        mealEvent.Reserved1,
+        mealEvent.Reserved2,
+        mealEvent.Reserved3,
+        mealEvent.Reserved4,
+        mealEvent.Reserved5
+    };
+
+    return Created($"/api/gongcan/meals/{mealEvent.Id}", result);
+}
+
 
     /// <summary>
     /// 商家更新共餐活動
