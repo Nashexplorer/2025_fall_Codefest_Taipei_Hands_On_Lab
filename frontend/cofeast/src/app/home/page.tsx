@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 16:20:13
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-08 21:31:35
+ * @LastEditTime: 2025-11-09 04:59:05
  * @FilePath: /frontend/cofeast/src/app/home/page.tsx
  */
 "use client";
@@ -26,7 +26,7 @@ const HomePage = () => {
       <Wrapper>
         <CardMedia
           component="img"
-          image="/images/banner.jpg"
+          image="/images/banner.png"
           sx={{
             width: "100%",
             margin: "16px 0px",
@@ -46,12 +46,12 @@ const HomePage = () => {
           }}
         >
           <ActivityCard
-            link="#"
+            link="/built-event"
             title="我要發起共餐"
             imageUrl="/images/temp.jpg"
           />
           <ActivityCard
-            link="#"
+            link="/search-participate"
             title="我要響應共餐"
             imageUrl="/images/temp.jpg"
           />
@@ -60,7 +60,7 @@ const HomePage = () => {
           愛心餐食補給站
         </Typography>
         <HorizontalCard
-          link="#"
+          link="/search-store"
           title="查看愛心據點"
           imageUrl="/images/temp2.jpg"
         />

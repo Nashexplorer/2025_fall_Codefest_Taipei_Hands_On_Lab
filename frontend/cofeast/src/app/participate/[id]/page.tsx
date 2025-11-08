@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-09 02:30:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 03:33:08
+ * @LastEditTime: 2025-11-09 04:57:22
  * @FilePath: /frontend/cofeast/src/app/participate/[id]/page.tsx
  */
 "use client";
