@@ -22,6 +22,7 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs, { Dayjs } from "dayjs";
 import React, { useState } from "react";
+import { createMealEvent } from "@/api/meals";
 
 /*
  * @Author: Fangyu Kung
@@ -84,6 +85,10 @@ const BuiltEventPage = (): React.ReactNode => {
   const [address, setAddress] = useState("");
   const [foodType, setFoodType] = useState("");
   const [dineIn, setDineIn] = useState("");
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [peopleCount, setPeopleCount] = useState("");
+  const [notes, setNotes] = useState("");
 
   const handleDistrictChange = (
     event:
@@ -91,6 +96,52 @@ const BuiltEventPage = (): React.ReactNode => {
       | (Event & { target: { value: unknown; name: string } })
   ) => {
     setSelectedDistrict(event.target.value as string);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (!title || !startDateTime || !endDateTime || selectedDistrict === "All" || !address) {
+        alert("請填寫所有必填欄位！");
+        return;
+      }
+
+      const payload = {
+        title: title,
+        summary: summary,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        district: selectedDistrict,
+        street: street,
+        address: address,
+        peopleCount: parseInt(peopleCount),
+        foodType: foodType,
+        dineIn: dineIn === "dinein",
+        notes: notes,
+      };
+
+      const result = await createMealEvent(payload);
+
+      if (result) {
+        alert("✅ 共餐活動建立成功！");
+        // 清空表單
+        setTitle("");
+        setSummary("");
+        setStartDateTime(null);
+        setEndDateTime(null);
+        setSelectedDistrict("All");
+        setStreet("");
+        setAddress("");
+        setPeopleCount("");
+        setFoodType("");
+        setDineIn("");
+        setNotes("");
+      } else {
+        alert("❌ 建立失敗，請稍後再試");
+      }
+    } catch (error) {
+      console.error("建立共餐活動失敗：", error);
+      alert("建立失敗，請稍後再試");
+    }
   };
 
   return (
@@ -137,6 +188,8 @@ const BuiltEventPage = (): React.ReactNode => {
           <StyledInputBase
             placeholder="請輸入名稱"
             inputProps={{ "aria-label": "search" }}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
           <Box mt={1}>
             <Typography color="#91A0A" className="text-center" variant="body2">
@@ -151,22 +204,8 @@ const BuiltEventPage = (): React.ReactNode => {
           <StyledInputBase
             placeholder="請輸入概述"
             inputProps={{ "aria-label": "text" }}
-            value=""
-          />
-        </FormControl>
-        <FormControl fullWidth>
-          <Box display="flex" alignItems="center" mt={3} mb={2}>
-            <Typography variant="h3" color="text.primary">
-              共餐活動時間
-            </Typography>
-            <Typography variant="h3" color="primary.main" ml={0.5}>
-              *
-            </Typography>
-          </Box>
-          <StyledInputBase
-            placeholder="請輸入概述"
-            inputProps={{ "aria-label": "text" }}
-            value=""
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
           />
         </FormControl>
         <FormControl fullWidth>
@@ -290,8 +329,8 @@ const BuiltEventPage = (): React.ReactNode => {
             <StyledInputBase
               placeholder="請輸入人數"
               inputProps={{ "aria-label": "text" }}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={peopleCount}
+              onChange={(e) => setPeopleCount(e.target.value)}
             />
           </Box>
         </FormControl>
@@ -342,14 +381,14 @@ const BuiltEventPage = (): React.ReactNode => {
             <StyledInputBase
               placeholder="請輸入備註"
               inputProps={{ "aria-label": "text" }}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </Box>
         </FormControl>
         <FormControl fullWidth>
           <Box display="flex" alignItems="center" mt={3} mb={2}></Box>
-          <Alert variant="outlined" severity="info" sx={{ bgcolor: '#423a3aff', color: '#fff', borderRadius: 2 }}>
+          <Alert variant="outlined" severity="info" sx={{ bgcolor: '#090909ff', color: '#fff', borderRadius: 2 }}>
             <Typography variant="body2">
               您的所有隱私資訊將受到保護，僅在報名確認後供聯繫使用，不會公開顯示。
             </Typography>
@@ -367,8 +406,7 @@ const BuiltEventPage = (): React.ReactNode => {
               fontWeight: "bold",
               textTransform: "none",
             }}
-            onClick={() => {
-            }}
+            onClick={handleSubmit}
           >
             送出表單
           </Button>
