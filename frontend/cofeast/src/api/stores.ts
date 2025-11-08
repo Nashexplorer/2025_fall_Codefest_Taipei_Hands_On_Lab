@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 17:10:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 01:01:53
+ * @LastEditTime: 2025-11-09 05:54:50
  * @FilePath: /frontend/cofeast/src/api/stores.ts
  */
 
@@ -36,7 +36,7 @@ const API_BASE_URL = "https://gongcan-api-d4vsmusihq-de.a.run.app/";
  */
 export async function getAllSupportPoints(
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 50
 ): Promise<SupportPointListResponse> {
   try {
     const response = await fetch(

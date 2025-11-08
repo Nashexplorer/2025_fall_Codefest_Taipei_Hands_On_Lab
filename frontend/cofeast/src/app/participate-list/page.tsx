@@ -1,6 +1,7 @@
 "use client";
 import { getParticipateList, ParticipateItem } from "@/api/participate";
 import { Wrapper } from "@/components/layout/layoutStyle";
+import Loading from "@/components/ui/Loading";
 import ParticipateCard from "@/components/ui/participateCard";
 import { Typography } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -51,7 +52,7 @@ const ParticipateListPage = () => {
         </Typography>
         <div>
           {loading ? (
-            <p>載入中...</p>
+            <Loading loading={loading} />
           ) : (
             participateList.map((item) => {
               return <ParticipateCard key={item.id} data={item} />;
