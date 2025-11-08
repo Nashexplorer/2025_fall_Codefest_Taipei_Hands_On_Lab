@@ -23,6 +23,11 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs, { Dayjs } from "dayjs";
 import React, { useState } from "react";
 import { createMealEvent } from "@/api/meals";
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 /*
  * @Author: Fangyu Kung
@@ -100,23 +105,39 @@ const BuiltEventPage = (): React.ReactNode => {
 
   const handleSubmit = async () => {
     try {
-      if (!title || !startDateTime || !endDateTime || selectedDistrict === "All" || !address) {
+      // 必填欄位驗證
+      if (
+        !title ||
+        !startDateTime ||
+        !endDateTime ||
+        selectedDistrict === "All" ||
+        !address ||
+        !peopleCount ||
+        !foodType ||
+        !dineIn
+      ) {
         alert("請填寫所有必填欄位！");
         return;
       }
 
+      // 從 address 拆出門牌號，假設格式「路名+號+樓層」或「路名+號」
+      const numberMatch = address.match(/\d+號/);
+      const number = numberMatch ? numberMatch[0] : "";
+
       const payload = {
         title: title,
-        summary: summary,
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString(),
+        description: summary,
+        capacity: parseInt(peopleCount),
+        dietType: foodType,
+        isDineIn: dineIn === "dinein",
+        startTime: startDateTime?.utcOffset(8).toISOString(),
+        endTime: endDateTime?.utcOffset(8).toISOString(),
+        signupDeadline: dayjs("2025-11-14T23:59:59").utcOffset(8).toISOString(),
+        notes: notes,
+        city: "臺北市",
         district: selectedDistrict,
         street: street,
-        address: address,
-        peopleCount: parseInt(peopleCount),
-        foodType: foodType,
-        dineIn: dineIn === "dinein",
-        notes: notes,
+        number: number
       };
 
       const result = await createMealEvent(payload);

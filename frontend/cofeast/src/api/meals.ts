@@ -2,7 +2,7 @@
  * @Author: Nash
  * @Date: 2025-11-09
  * @FilePath: /frontend/cofeast/src/api/meals.ts
- * @Description: 共餐活動 API 請求模組
+ * @Description: 共餐活動 API 請求模組（新版 payload）
  */
 
 const API_BASE_URL = "https://gongcan-api-d4vsmusihq-de.a.run.app/";
@@ -13,35 +13,44 @@ const API_BASE_URL = "https://gongcan-api-d4vsmusihq-de.a.run.app/";
 export interface MealEvent {
   id: string;
   title: string;
-  summary: string;
+  description: string;
   startTime: string;
   endTime: string;
+  signupDeadline?: string;
+  city: string;
   district: string;
   street: string;
-  address: string;
-  peopleCount: number;
-  foodType: string;
-  dineIn: boolean;
+  number: string;
+  capacity: number;
+  dietType: string;
+  isDineIn: boolean;
   notes?: string;
-  createdAt?: string;
   hostUserName?: string;
+  phone?: string;
+  email?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
- * 建立共餐活動的請求介面
+ * 建立共餐活動的請求介面（新版）
  */
 export interface CreateMealRequest {
   title: string;
-  summary: string;
+  description: string;
   startTime: string;
   endTime: string;
+  signupDeadline: string;
+  city: string;
   district: string;
   street: string;
-  address: string;
-  peopleCount: number;
-  foodType: string;
-  dineIn: boolean;
+  number: string;
+  capacity: number;
+  dietType: string;
+  isDineIn: boolean;
   notes?: string;
+  phone?: string;
+  email?: string;
 }
 
 /**
