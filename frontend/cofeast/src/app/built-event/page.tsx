@@ -1,5 +1,6 @@
 "use client";
 import Announcement from "@/components/ui/Announcement";
+import StatusDialog from "@/components/ui/StatusDialog";
 import { SelectedDropdown } from "@/components/ui/SelectedDropdown";
 import { taipeiDistricts } from "@/data";
 import theme from "@/theme";
@@ -7,8 +8,6 @@ import {
   Box,
   Button,
   Alert,
-  Dialog,
-  DialogContent,
   Radio,
   RadioGroup,
   FormControlLabel,
@@ -159,7 +158,9 @@ const BuiltEventPage = (): React.ReactNode => {
       const result = await createMealEvent(payload);
 
       if (result) {
-        alert("✅ 共餐活動建立成功！");
+        setDialogMessage("共餐活動建立成功！");
+        setDialogSeverity("success");
+        setDialogOpen(true);
         // 清空表單
         setTitle("");
         setSummary("");
@@ -173,10 +174,15 @@ const BuiltEventPage = (): React.ReactNode => {
         setDineIn("");
         setNotes("");
       } else {
-        alert("❌ 建立失敗，請稍後再試");
+        setDialogMessage("建立失敗，請稍後再試");
+        setDialogSeverity("error");
+        setDialogOpen(true);
       }
     } catch (error) {
-      alert("建立失敗，請稍後再試");
+      console.error("建立共餐活動失敗：", error);
+      setDialogMessage("建立失敗，請稍後再試");
+      setDialogSeverity("error");
+      setDialogOpen(true);
     }
   };
 
@@ -447,81 +453,12 @@ const BuiltEventPage = (): React.ReactNode => {
             送出表單
           </Button>
         </FormControl>
-        <Dialog
-          open={dialogOpen}
-          onClose={handleCloseDialog}
-          maxWidth="xs"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: "16px",
-              padding: "24px",
-              backgroundColor: "#fff",
-            },
-          }}
-          sx={{
-            "& .MuiBackdrop-root": {
-              backgroundColor: "rgba(0, 0, 0, 0.6)",
-            },
-          }}
-        >
-          <DialogContent sx={{ padding: 0 }}>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <Box
-                sx={{
-                  width: "56px",
-                  height: "56px",
-                  borderRadius: "50%",
-                  backgroundColor:
-                    dialogSeverity === "success" ? "#EDF8FA" : "#FEF3F2",
-                  border: `2px solid ${dialogSeverity === "success"
-                    ? theme.palette.primary.main
-                    : theme.palette.error.main
-                    }`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Typography
-                  sx={{
-                    color:
-                      dialogSeverity === "success"
-                        ? theme.palette.primary.main
-                        : theme.palette.error.main,
-                    fontWeight: 700,
-                    fontSize: "2rem",
-                  }}
-                >
-                  {dialogSeverity === "success" ? "✓" : "!"}
-                </Typography>
-              </Box>
-
-              <Typography
-                variant="h3SemiBold"
-                color="text.primary"
-                sx={{ textAlign: "center" }}
-              >
-                {dialogMessage}
-              </Typography>
-
-              <Button
-                onClick={() => router.push("/home")}
-                sx={{ width: "100%", mt: 1 }}
-                variant="contained"
-              >
-                確定
-              </Button>
-            </Box>
-          </DialogContent>
-        </Dialog>
+        <StatusDialog
+          dialogOpen={dialogOpen}
+          handleCloseDialog={handleCloseDialog}
+          dialogMessage={dialogMessage}
+          dialogSeverity={dialogSeverity}
+        />
       </div>
     </ThemeProvider>
   );
