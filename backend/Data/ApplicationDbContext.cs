@@ -13,7 +13,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaipeiParkingStatus> TaipeiParkingStatuses { get; set; }
     public DbSet<MealEvent> MealEvents { get; set; }
     public DbSet<MealEventParticipant> MealEventParticipants { get; set; }
-
+    public DbSet<SupportPoint> SupportPoints { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
