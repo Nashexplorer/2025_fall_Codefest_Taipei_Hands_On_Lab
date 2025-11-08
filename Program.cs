@@ -78,10 +78,15 @@ else
 // Cloud Run 使用 HTTPS，不需要在應用層重定向
 // app.UseHttpsRedirection();
 
-// API 端點
+// ============================================
+// Parking API - 停車場相關 API
+// ============================================
+var parkingApi = app.MapGroup("/api/parking")
+    .WithTags("Parking API")
+    .WithOpenApi();
 
 // 1. 取得所有停車場狀態（分頁）
-app.MapGet("/api/parking-status", async (ApplicationDbContext db, int page = 1, int pageSize = 10) =>
+parkingApi.MapGet("/status", async (ApplicationDbContext db, int page = 1, int pageSize = 10) =>
 {
     var totalCount = await db.TaipeiParkingStatuses.CountAsync();
     var items = await db.TaipeiParkingStatuses
@@ -103,7 +108,7 @@ app.MapGet("/api/parking-status", async (ApplicationDbContext db, int page = 1, 
 .Produces<object>(StatusCodes.Status200OK);
 
 // 2. 根據 ID 取得最新的停車場狀態
-app.MapGet("/api/parking-status/{id}", async (ApplicationDbContext db, string id) =>
+parkingApi.MapGet("/status/{id}", async (ApplicationDbContext db, string id) =>
 {
     var status = await db.TaipeiParkingStatuses
         .Where(p => p.Id == id)
@@ -118,7 +123,7 @@ app.MapGet("/api/parking-status/{id}", async (ApplicationDbContext db, string id
 .Produces(StatusCodes.Status404NotFound);
 
 // 3. 根據 ID 和更新時間取得特定停車場狀態
-app.MapGet("/api/parking-status/{id}/{updateTime:datetime}", async (ApplicationDbContext db, string id, DateTime updateTime) =>
+parkingApi.MapGet("/status/{id}/{updateTime:datetime}", async (ApplicationDbContext db, string id, DateTime updateTime) =>
 {
     var status = await db.TaipeiParkingStatuses
         .FirstOrDefaultAsync(p => p.Id == id && p.UpdateTime == updateTime);
@@ -131,7 +136,7 @@ app.MapGet("/api/parking-status/{id}/{updateTime:datetime}", async (ApplicationD
 .Produces(StatusCodes.Status404NotFound);
 
 // 4. 取得特定停車場的歷史記錄
-app.MapGet("/api/parking-status/{id}/history", async (ApplicationDbContext db, string id, int page = 1, int pageSize = 20) =>
+parkingApi.MapGet("/status/{id}/history", async (ApplicationDbContext db, string id, int page = 1, int pageSize = 20) =>
 {
     var totalCount = await db.TaipeiParkingStatuses.Where(p => p.Id == id).CountAsync();
     var items = await db.TaipeiParkingStatuses
@@ -155,7 +160,7 @@ app.MapGet("/api/parking-status/{id}/history", async (ApplicationDbContext db, s
 .Produces<object>(StatusCodes.Status200OK);
 
 // 5. 新增停車場狀態
-app.MapPost("/api/parking-status", async (ApplicationDbContext db, TaipeiParkingStatus status) =>
+parkingApi.MapPost("/status", async (ApplicationDbContext db, TaipeiParkingStatus status) =>
 {
     // 檢查是否已存在相同的記錄
     var exists = await db.TaipeiParkingStatuses
@@ -169,7 +174,7 @@ app.MapPost("/api/parking-status", async (ApplicationDbContext db, TaipeiParking
     db.TaipeiParkingStatuses.Add(status);
     await db.SaveChangesAsync();
 
-    return Results.Created($"/api/parking-status/{status.Id}/{status.UpdateTime:O}", status);
+    return Results.Created($"/api/parking/status/{status.Id}/{status.UpdateTime:O}", status);
 })
 .WithName("CreateParkingStatus")
 .WithOpenApi()
@@ -177,7 +182,7 @@ app.MapPost("/api/parking-status", async (ApplicationDbContext db, TaipeiParking
 .Produces(StatusCodes.Status409Conflict);
 
 // 6. 更新停車場狀態
-app.MapPut("/api/parking-status/{id}/{updateTime:datetime}", async (ApplicationDbContext db, string id, DateTime updateTime, TaipeiParkingStatus updatedStatus) =>
+parkingApi.MapPut("/status/{id}/{updateTime:datetime}", async (ApplicationDbContext db, string id, DateTime updateTime, TaipeiParkingStatus updatedStatus) =>
 {
     var status = await db.TaipeiParkingStatuses
         .FirstOrDefaultAsync(p => p.Id == id && p.UpdateTime == updateTime);
@@ -218,7 +223,7 @@ app.MapPut("/api/parking-status/{id}/{updateTime:datetime}", async (ApplicationD
 .Produces(StatusCodes.Status404NotFound);
 
 // 7. 刪除停車場狀態
-app.MapDelete("/api/parking-status/{id}/{updateTime:datetime}", async (ApplicationDbContext db, string id, DateTime updateTime) =>
+parkingApi.MapDelete("/status/{id}/{updateTime:datetime}", async (ApplicationDbContext db, string id, DateTime updateTime) =>
 {
     var status = await db.TaipeiParkingStatuses
         .FirstOrDefaultAsync(p => p.Id == id && p.UpdateTime == updateTime);
@@ -239,7 +244,7 @@ app.MapDelete("/api/parking-status/{id}/{updateTime:datetime}", async (Applicati
 .Produces(StatusCodes.Status404NotFound);
 
 // 8. 取得所有不重複的停車場 ID
-app.MapGet("/api/parking-ids", async (ApplicationDbContext db) =>
+parkingApi.MapGet("/ids", async (ApplicationDbContext db) =>
 {
     var ids = await db.TaipeiParkingStatuses
         .Select(p => p.Id)
@@ -253,8 +258,15 @@ app.MapGet("/api/parking-ids", async (ApplicationDbContext db) =>
 .WithOpenApi()
 .Produces<List<string>>(StatusCodes.Status200OK);
 
-// 9. 取得所有共餐活動（分頁）
-app.MapGet("/api/meals", async (ApplicationDbContext db, int page = 1, int pageSize = 10) =>
+// ============================================
+// GongCan API - 共餐活動相關 API
+// ============================================
+var gongCanApi = app.MapGroup("/api/gongcan")
+    .WithTags("GongCan API")
+    .WithOpenApi();
+
+// 1. 取得所有共餐活動（分頁）
+gongCanApi.MapGet("/meals", async (ApplicationDbContext db, int page = 1, int pageSize = 10) =>
 {
     var totalCount = await db.MealActivities.CountAsync();
     var items = await db.MealActivities
@@ -301,8 +313,8 @@ app.MapGet("/api/meals", async (ApplicationDbContext db, int page = 1, int pageS
 .WithOpenApi()
 .Produces<object>(StatusCodes.Status200OK);
 
-// 10. 根據 ID 取得共餐活動
-app.MapGet("/api/meals/{id}", async (ApplicationDbContext db, string id) =>
+// 2. 根據 ID 取得共餐活動
+gongCanApi.MapGet("/meals/{id}", async (ApplicationDbContext db, string id) =>
 {
     var meal = await db.MealActivities
         .FirstOrDefaultAsync(m => m.Id == id);

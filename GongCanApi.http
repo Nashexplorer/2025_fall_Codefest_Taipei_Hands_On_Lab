@@ -1,32 +1,36 @@
 @TaipeiSportsApi_HostAddress = http://localhost:5000
 @httpsAddress = https://localhost:5001
 
+# ============================================
+# Parking API - 停車場相關 API
+# ============================================
+
 ### 1. 取得所有停車場狀態（分頁）
-GET {{TaipeiSportsApi_HostAddress}}/api/parking-status?page=1&pageSize=10
+GET {{TaipeiSportsApi_HostAddress}}/api/parking/status?page=1&pageSize=10
 Accept: application/json
 
 ###
 
 ### 2. 取得特定停車場最新狀態
-GET {{TaipeiSportsApi_HostAddress}}/api/parking-status/P001
+GET {{TaipeiSportsApi_HostAddress}}/api/parking/status/P001
 Accept: application/json
 
 ###
 
 ### 3. 取得特定停車場在特定時間的狀態
-GET {{TaipeiSportsApi_HostAddress}}/api/parking-status/P001/2025-11-05T10:30:00
+GET {{TaipeiSportsApi_HostAddress}}/api/parking/status/P001/2025-11-05T10:30:00
 Accept: application/json
 
 ###
 
 ### 4. 取得特定停車場的歷史記錄
-GET {{TaipeiSportsApi_HostAddress}}/api/parking-status/P001/history?page=1&pageSize=20
+GET {{TaipeiSportsApi_HostAddress}}/api/parking/status/P001/history?page=1&pageSize=20
 Accept: application/json
 
 ###
 
 ### 5. 新增停車場狀態
-POST {{TaipeiSportsApi_HostAddress}}/api/parking-status
+POST {{TaipeiSportsApi_HostAddress}}/api/parking/status
 Content-Type: application/json
 
 {
@@ -47,7 +51,7 @@ Content-Type: application/json
 ###
 
 ### 6. 更新停車場狀態
-PUT {{TaipeiSportsApi_HostAddress}}/api/parking-status/P001/2025-11-05T10:30:00
+PUT {{TaipeiSportsApi_HostAddress}}/api/parking/status/P001/2025-11-05T10:30:00
 Content-Type: application/json
 
 {
@@ -59,12 +63,28 @@ Content-Type: application/json
 ###
 
 ### 7. 刪除停車場狀態
-DELETE {{TaipeiSportsApi_HostAddress}}/api/parking-status/P001/2025-11-05T10:30:00
+DELETE {{TaipeiSportsApi_HostAddress}}/api/parking/status/P001/2025-11-05T10:30:00
 
 ###
 
 ### 8. 取得所有不重複的停車場 ID
-GET {{TaipeiSportsApi_HostAddress}}/api/parking-ids
+GET {{TaipeiSportsApi_HostAddress}}/api/parking/ids
+Accept: application/json
+
+###
+
+# ============================================
+# GongCan API - 共餐活動相關 API
+# ============================================
+
+### 9. 取得所有共餐活動（分頁）
+GET {{TaipeiSportsApi_HostAddress}}/api/gongcan/meals?page=1&pageSize=10
+Accept: application/json
+
+###
+
+### 10. 根據 ID 取得共餐活動
+GET {{TaipeiSportsApi_HostAddress}}/api/gongcan/meals/{id}
 Accept: application/json
 
 ###
