@@ -1,7 +1,16 @@
+/*
+ * @Author: Fangyu Kung
+ * @Date: 2025-11-08 18:14:35
+ * @LastEditors: Do not edit
+ * @LastEditTime: 2025-11-09 01:51:33
+ * @FilePath: /frontend/cofeast/src/app/search-store/components/SearchBar.tsx
+ */
+"use client";
 import theme from "@/theme";
 import styled from "@emotion/styled";
 import SearchIcon from "@mui/icons-material/Search";
 import { Box, InputBase } from "@mui/material";
+import { useState } from "react";
 
 const SearchBarContainer = styled(Box)`
   display: flex;
@@ -53,14 +62,39 @@ const SearchButton = styled.button`
   }
 `;
 
-const SearchBar = (): React.ReactNode => {
+interface SearchBarProps {
+  onSearch?: (address: string) => void;
+  placeholder?: string;
+}
+
+const SearchBar = ({
+  onSearch,
+  placeholder = "搜尋補給站",
+}: SearchBarProps): React.ReactNode => {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleSearch = () => {
+    if (onSearch) {
+      onSearch(inputValue);
+    }
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
     <SearchBarContainer>
       <StyledInputBase
-        placeholder="搜尋補給站"
+        placeholder={placeholder}
         inputProps={{ "aria-label": "search" }}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyPress}
       />
-      <SearchButton>
+      <SearchButton onClick={handleSearch}>
         <SearchIcon />
       </SearchButton>
     </SearchBarContainer>
