@@ -21,9 +21,6 @@ public class SupportPoint
     [Column("division")]
     public string? Division { get; set; }
 
-    [Column("zone_code")]
-    public string? ZoneCode { get; set; }
-
     [Column("address")]
     public string? Address { get; set; }
 
