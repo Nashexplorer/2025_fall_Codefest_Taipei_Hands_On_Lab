@@ -7,6 +7,8 @@ import {
   Box,
   Button,
   Alert,
+  Dialog,
+  DialogContent,
   Radio,
   RadioGroup,
   FormControlLabel,
@@ -25,6 +27,7 @@ import React, { useState } from "react";
 import { createMealEvent } from "@/api/meals";
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { useRouter } from "next/navigation";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -83,6 +86,7 @@ const StyledDateTimePicker = styled(DateTimePicker)`
 `;
 
 const BuiltEventPage = (): React.ReactNode => {
+  const router = useRouter();
   const [selectedDistrict, setSelectedDistrict] = useState("All");
   const [street, setStreet] = useState("");
   const [startDateTime, setStartDateTime] = useState<Dayjs | null>(null);
@@ -95,12 +99,23 @@ const BuiltEventPage = (): React.ReactNode => {
   const [peopleCount, setPeopleCount] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogSeverity, setDialogSeverity] = useState<"success" | "error">("success");
+
   const handleDistrictChange = (
     event:
       | React.ChangeEvent<HTMLInputElement>
       | (Event & { target: { value: unknown; name: string } })
   ) => {
     setSelectedDistrict(event.target.value as string);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    if (dialogSeverity === "success") {
+      router.push("/home");
+    }
   };
 
   const handleSubmit = async () => {
@@ -116,7 +131,9 @@ const BuiltEventPage = (): React.ReactNode => {
         !foodType ||
         !dineIn
       ) {
-        alert("請填寫所有必填欄位！");
+        setDialogMessage("請填寫所有必填欄位！");
+        setDialogSeverity("error");
+        setDialogOpen(true);
         return;
       }
 
@@ -430,6 +447,81 @@ const BuiltEventPage = (): React.ReactNode => {
             送出表單
           </Button>
         </FormControl>
+        <Dialog
+          open={dialogOpen}
+          onClose={handleCloseDialog}
+          maxWidth="xs"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "16px",
+              padding: "24px",
+              backgroundColor: "#fff",
+            },
+          }}
+          sx={{
+            "& .MuiBackdrop-root": {
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+            },
+          }}
+        >
+          <DialogContent sx={{ padding: 0 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "50%",
+                  backgroundColor:
+                    dialogSeverity === "success" ? "#EDF8FA" : "#FEF3F2",
+                  border: `2px solid ${dialogSeverity === "success"
+                    ? theme.palette.primary.main
+                    : theme.palette.error.main
+                    }`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
+                  sx={{
+                    color:
+                      dialogSeverity === "success"
+                        ? theme.palette.primary.main
+                        : theme.palette.error.main,
+                    fontWeight: 700,
+                    fontSize: "2rem",
+                  }}
+                >
+                  {dialogSeverity === "success" ? "✓" : "!"}
+                </Typography>
+              </Box>
+
+              <Typography
+                variant="h3SemiBold"
+                color="text.primary"
+                sx={{ textAlign: "center" }}
+              >
+                {dialogMessage}
+              </Typography>
+
+              <Button
+                onClick={() => router.push("/home")}
+                sx={{ width: "100%", mt: 1 }}
+                variant="contained"
+              >
+                確定
+              </Button>
+            </Box>
+          </DialogContent>
+        </Dialog>
       </div>
     </ThemeProvider>
   );
