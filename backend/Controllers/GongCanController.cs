@@ -26,24 +26,23 @@ public class GongCanController : ControllerBase
     }
 
     /// <summary>
-    /// 生成唯一的共餐活動 ID
-    /// 格式：Event{yyyyMMddHHmmss}{4位隨機數}
-    /// 例如：Event202502151830001234
+    /// 生成唯一的共餐活動 ID（使用 UUID）
+    /// 格式：xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    /// 例如：550e8400-e29b-41d4-a716-446655440000
     /// </summary>
     private async Task<string> GenerateMealEventIdAsync()
     {
-        var random = new Random();
         string newId;
         bool exists;
 
         do
         {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            var randomSuffix = random.Next(1000, 9999).ToString(); // 4位隨機數
-            newId = $"Event{timestamp}{randomSuffix}";
+            // 生成標準 UUID 格式（包含連字號）
+            newId = Guid.NewGuid().ToString();
 
+            // 檢查是否已存在（雖然 UUID 碰撞機率極低，但為安全起見仍檢查）
             exists = await _db.MealEvents.AnyAsync(m => m.Id == newId);
-        } while (exists); // 如果已存在，重新生成
+        } while (exists); // 如果已存在，重新生成（極少發生）
 
         return newId;
     }
@@ -317,7 +316,7 @@ public class GongCanController : ControllerBase
         // 將所有參與者狀態改為 cancelled
         var participants = await _db.MealEventParticipants
             .Where(p => p.MealEventId == id && p.Status == "confirmed")
-            .Select(p => new { p.Id, p.Email, p.UserId })
+            .Select(p => new { p.Id, p.Email, p.UserId, p.UserName })
             .ToListAsync();
 
         // 將活動狀態改為 cancelled
@@ -346,7 +345,7 @@ public class GongCanController : ControllerBase
                 {
                     await _emailService.NotifyEventCancelledByHostAsync(
                         participant.Email,
-                        participant.UserId, // 使用 UserId 作為名稱，可根據實際需求調整
+                        participant.UserName ?? participant.UserId, // 優先使用 UserName
                         mealEvent.Title,
                         mealEvent.Id,
                         mealEvent.HostUserId
@@ -395,6 +394,9 @@ public class GongCanController : ControllerBase
         // 檢查參與人數是否有效
         var participantCount = request.ParticipantCount > 0 ? request.ParticipantCount : 1;
 
+        // 確定實際的 UserId（如果未提供則使用預設值）
+        var actualUserId = string.IsNullOrWhiteSpace(request.UserId) ? "user001" : request.UserId;
+
         // 計算目前已確認的總參與人數（加總所有參與者的 participantCount）
         var currentTotalParticipants = await _db.MealEventParticipants
             .Where(p => p.MealEventId == id && p.Status == "confirmed")
@@ -408,7 +410,7 @@ public class GongCanController : ControllerBase
 
         // 檢查使用者是否已經預約過（避免重複預約）
         var existingParticipant = await _db.MealEventParticipants
-            .FirstOrDefaultAsync(p => p.MealEventId == id && p.UserId == request.UserId);
+            .FirstOrDefaultAsync(p => p.MealEventId == id && p.UserId == actualUserId);
 
         if (existingParticipant != null)
         {
@@ -416,15 +418,16 @@ public class GongCanController : ControllerBase
             {
                 return Conflict(new { Message = "您已經預約過此活動" });
             }
-            else if (existingParticipant.Status == "cancelled")
-            {
-                // 如果之前取消過，重新啟用預約
-                existingParticipant.Status = "confirmed";
-                existingParticipant.Phone = request.Phone ?? "0912345678";
-                existingParticipant.Email = request.Email ?? "chishian.yang@gmail.com";
-                existingParticipant.ParticipantCount = participantCount;
-                existingParticipant.UpdatedAt = DateTime.UtcNow;
-            }
+            //else if (existingParticipant.Status == "cancelled")
+            //{
+            //    // 如果之前取消過，重新啟用預約
+            //    existingParticipant.Status = "confirmed";
+            //    existingParticipant.Phone = request.Phone ?? "0912345678";
+            //    existingParticipant.Email = request.Email ?? "chishian.yang@gmail.com";
+            //    existingParticipant.ParticipantCount = participantCount;
+            //    existingParticipant.UserName = request.UserName ?? "陳小天";
+            //    existingParticipant.UpdatedAt = DateTime.UtcNow;
+            //}
         }
         else
         {
@@ -433,7 +436,8 @@ public class GongCanController : ControllerBase
             {
                 Id = Guid.NewGuid().ToString(),
                 MealEventId = id,
-                UserId = request.UserId,
+                UserId = actualUserId,
+                UserName = request.UserName ?? "陳小天",
                 Phone = request.Phone ?? "0912345678",
                 Email = request.Email ?? "chishian.yang@gmail.com",
                 ParticipantCount = participantCount,
@@ -483,14 +487,35 @@ public class GongCanController : ControllerBase
 
         // 取得參與者記錄
         var participantRecord = await _db.MealEventParticipants
-            .FirstOrDefaultAsync(p => p.MealEventId == id && p.UserId == request.UserId);
+            .FirstOrDefaultAsync(p => p.MealEventId == id && p.UserId == actualUserId);
+
+        // 發送預約成功通知郵件（非同步執行，不阻塞回應）
+        if (participantRecord != null && !string.IsNullOrWhiteSpace(participantRecord.Email))
+        {
+            _ = Task.Run(async () =>
+            {
+                await _emailService.NotifyParticipationSuccessAsync(
+                    participantRecord.Email!,
+                    participantRecord.UserName ?? participantRecord.UserId, // 優先使用 UserName
+                    mealEvent.Title,
+                    mealEvent.Id,
+                    mealEvent.StartTime,
+                    mealEvent.EndTime,
+                    mealEvent.FullAddress,
+                    participantRecord.ParticipantCount,
+                    mealEvent.CurrentParticipants,
+                    mealEvent.Capacity
+                );
+            });
+        }
 
         return Created($"/api/gongcan/reservations/{participantRecord?.Id}", new
         {
             Message = "預約成功",
             ReservationId = participantRecord?.Id,
             MealEventId = mealEvent.Id,
-            UserId = request.UserId,
+            UserId = actualUserId,
+            UserName = participantRecord?.UserName,
             Phone = participantRecord?.Phone,
             Email = participantRecord?.Email,
             ParticipantCount = participantRecord?.ParticipantCount ?? 1,
@@ -558,7 +583,7 @@ public class GongCanController : ControllerBase
         // 先取得其他參與者資訊（在 Task.Run 之前）
         var otherParticipants = await _db.MealEventParticipants
             .Where(p => p.MealEventId == id && p.Status == "confirmed" && p.Id != participant.Id)
-            .Select(p => new { p.Email, p.UserId })
+            .Select(p => new { p.Email, p.UserId, p.UserName })
             .ToListAsync();
 
         // 發送郵件通知（非同步執行，不阻塞回應）
@@ -569,7 +594,7 @@ public class GongCanController : ControllerBase
             {
                 await _emailService.NotifySelfCancellationAsync(
                     participant.Email,
-                    participant.UserId, // 使用 UserId 作為名稱，可根據實際需求調整
+                    participant.UserName ?? participant.UserId, // 優先使用 UserName
                     mealEvent.Title,
                     mealEvent.Id
                 );
@@ -582,7 +607,7 @@ public class GongCanController : ControllerBase
                     mealEvent.Email,
                     mealEvent.HostUserId,
                     mealEvent.Title,
-                    participant.UserId,
+                    participant.UserName ?? participant.UserId, // 優先使用 UserName
                     cancelledCount,
                     mealEvent.CurrentParticipants,
                     mealEvent.Capacity
@@ -596,7 +621,7 @@ public class GongCanController : ControllerBase
                 {
                     await _emailService.NotifyParticipantCancellationAsync(
                         otherParticipant.Email,
-                        otherParticipant.UserId,
+                        otherParticipant.UserName ?? otherParticipant.UserId, // 優先使用 UserName
                         mealEvent.Title,
                         mealEvent.Id,
                         mealEvent.CurrentParticipants,
@@ -701,6 +726,8 @@ public class GongCanController : ControllerBase
                         ReservationId = p.Id,
                         ReservationStatus = p.Status,
                         ReservationCreatedAt = p.CreatedAt,
+                        UserId = p.UserId,
+                        UserName = p.UserName,
                         Phone = p.Phone,
                         Email = p.Email,
                         ParticipantCount = p.ParticipantCount,
@@ -783,6 +810,7 @@ public class GongCanController : ControllerBase
             ReservationId = participant.Id,
             MealEventId = participant.MealEventId,
             UserId = participant.UserId,
+            UserName = participant.UserName,
             Phone = participant.Phone,
             Email = participant.Email,
             ParticipantCount = participant.ParticipantCount,
@@ -826,5 +854,5 @@ public class GongCanController : ControllerBase
 /// <summary>
 /// 參加共餐活動請求模型
 /// </summary>
-public record ParticipateRequest(string UserId, string? Phone = null, string? Email = null, int ParticipantCount = 1);
+public record ParticipateRequest(string? UserId = null, string? Phone = null, string? Email = null, int ParticipantCount = 1, string? UserName = null);
 

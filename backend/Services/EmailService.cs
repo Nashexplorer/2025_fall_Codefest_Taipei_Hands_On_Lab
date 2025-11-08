@@ -121,6 +121,16 @@ public class EmailService
         await SendEmailAsync(participantEmail, participantName, subject, htmlBody);
     }
 
+    /// <summary>
+    /// 通知參與者預約成功
+    /// </summary>
+    public async Task NotifyParticipationSuccessAsync(string participantEmail, string participantName, string eventTitle, string eventId, DateTime startTime, DateTime endTime, string? fullAddress, int participantCount, int currentParticipants, int capacity)
+    {
+        var subject = $"🎉 預約成功！共餐活動「{eventTitle}」";
+        var htmlBody = GetParticipationSuccessEmailTemplate(participantName, eventTitle, eventId, startTime, endTime, fullAddress, participantCount, currentParticipants, capacity);
+        await SendEmailAsync(participantEmail, participantName, subject, htmlBody);
+    }
+
     #region Email Templates
 
     private string GetEventFullEmailTemplate(string hostName, string eventTitle, string eventId, int currentParticipants, int capacity)
@@ -395,6 +405,78 @@ public class EmailService
                             </p>
                             <p style=""margin: 20px 0 0 0; color: #333333; font-size: 16px; line-height: 1.6;"">
                                 感謝您使用共餐活動平台，期待下次再為您服務！
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style=""padding: 30px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 10px 10px;"">
+                            <p style=""margin: 0; color: #999999; font-size: 12px;"">
+                                此為系統自動發送郵件，請勿直接回覆。
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+    }
+
+    private string GetParticipationSuccessEmailTemplate(string participantName, string eventTitle, string eventId, DateTime startTime, DateTime endTime, string? fullAddress, int participantCount, int currentParticipants, int capacity)
+    {
+        var startTimeStr = startTime.ToString("yyyy年MM月dd日 HH:mm");
+        var endTimeStr = endTime.ToString("yyyy年MM月dd日 HH:mm");
+        var addressDisplay = string.IsNullOrWhiteSpace(fullAddress) ? "地址待確認" : fullAddress;
+        
+        return $@"
+<!DOCTYPE html>
+<html lang=""zh-TW"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>預約成功</title>
+</head>
+<body style=""margin: 0; padding: 0; font-family: 'Microsoft JhengHei', Arial, sans-serif; background-color: #f5f5f5;"">
+    <table role=""presentation"" style=""width: 100%; border-collapse: collapse; background-color: #f5f5f5;"">
+        <tr>
+            <td align=""center"" style=""padding: 40px 20px;"">
+                <table role=""presentation"" style=""max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);"">
+                    <!-- Header -->
+                    <tr>
+                        <td style=""background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0;"">
+                            <h1 style=""margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;"">🎉 預約成功！</h1>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style=""padding: 40px 30px;"">
+                            <p style=""margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;"">
+                                親愛的 <strong style=""color: #667eea;"">{participantName}</strong>，
+                            </p>
+                            <p style=""margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;"">
+                                恭喜您！您已成功預約共餐活動。
+                            </p>
+                            <div style=""background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 30px 0; border-radius: 5px;"">
+                                <p style=""margin: 0 0 15px 0; color: #333333; font-size: 18px; font-weight: bold;"">📋 活動資訊</p>
+                                <p style=""margin: 8px 0; color: #666666; font-size: 14px;""><strong style=""color: #333333;"">活動名稱：</strong>{eventTitle}</p>
+                                <p style=""margin: 8px 0; color: #666666; font-size: 14px;""><strong style=""color: #333333;"">活動 ID：</strong>{eventId}</p>
+                                <p style=""margin: 8px 0; color: #666666; font-size: 14px;""><strong style=""color: #333333;"">開始時間：</strong>{startTimeStr}</p>
+                                <p style=""margin: 8px 0; color: #666666; font-size: 14px;""><strong style=""color: #333333;"">結束時間：</strong>{endTimeStr}</p>
+                                <p style=""margin: 8px 0; color: #666666; font-size: 14px;""><strong style=""color: #333333;"">活動地點：</strong>{addressDisplay}</p>
+                                <p style=""margin: 8px 0; color: #666666; font-size: 14px;""><strong style=""color: #333333;"">預約人數：</strong>{participantCount} 人</p>
+                            </div>
+                            <div style=""background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 5px;"">
+                                <p style=""margin: 0; color: #2e7d32; font-size: 14px;"">
+                                    <strong>📊 活動狀態：</strong>目前參與人數 {currentParticipants} / {capacity} 人
+                                </p>
+                            </div>
+                            <p style=""margin: 20px 0 0 0; color: #333333; font-size: 16px; line-height: 1.6;"">
+                                請準時參加活動，期待與您共度美好時光！
+                            </p>
+                            <p style=""margin: 20px 0 0 0; color: #333333; font-size: 16px; line-height: 1.6;"">
+                                如有任何問題，請聯繫活動主辦者。
                             </p>
                         </td>
                     </tr>

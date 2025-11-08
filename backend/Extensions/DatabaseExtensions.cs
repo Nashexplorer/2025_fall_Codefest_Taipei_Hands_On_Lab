@@ -29,11 +29,17 @@ public static class DatabaseExtensions
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
+            // 設定命令超時時間為 120 秒（預設為 30 秒）
+            //options.CommandTimeout(120);
+            
             if (useUnixSocket)
             {
                 // Cloud SQL 使用 Unix socket，不需要指定 ServerVersion
                 options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 21)), mySqlOptions =>
                 {
+                    // 設定命令超時時間
+                    //mySqlOptions.CommandTimeout(120);
+                    
                     // 啟用重試邏輯
                     mySqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 3,
@@ -46,6 +52,9 @@ public static class DatabaseExtensions
                 // 一般 MySQL 連接
                 options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), mySqlOptions =>
                 {
+                    // 設定命令超時時間
+                    //mySqlOptions.CommandTimeout(120);
+                    
                     // 啟用重試邏輯
                     mySqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 3,

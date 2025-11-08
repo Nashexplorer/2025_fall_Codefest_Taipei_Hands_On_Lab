@@ -45,5 +45,9 @@ public class MealEventParticipant
 
     [Column("participant_count")]
     public int ParticipantCount { get; set; } = 1; // 預設為 1 人
+
+    [Column("user_name")]
+    [MaxLength(255)]
+    public string? UserName { get; set; }
 }
 
