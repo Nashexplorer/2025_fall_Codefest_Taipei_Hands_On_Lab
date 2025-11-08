@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 18:12:53
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 04:51:47
+ * @LastEditTime: 2025-11-09 05:49:46
  * @FilePath: /frontend/cofeast/src/app/search-participate/page.tsx
  */
 "use client";
@@ -10,13 +10,8 @@
 import { getParticipateList, ParticipateItem } from "@/api/participate";
 import GoogleMapWithSearch from "@/app/search-participate/components/GoogleMapWithSearch";
 import SearchBar from "@/app/search-store/components/SearchBar";
-import {
-  Backdrop,
-  Box,
-  Button,
-  CircularProgress,
-  Typography,
-} from "@mui/material";
+import Loading from "@/components/ui/Loading";
+import { Box, Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -61,37 +56,7 @@ const SearchParticipate = (): React.ReactNode => {
         <GoogleMapWithSearch participateList={participateList} />
       </div>
 
-      {/* Loading Backdrop */}
-      <Backdrop
-        sx={{
-          color: "#fff",
-          zIndex: 1500,
-          backdropFilter: "blur(4px)",
-          backgroundColor: "rgba(0, 0, 0, 0.3)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-        }}
-        open={loading}
-      >
-        <CircularProgress
-          size={60}
-          thickness={4}
-          sx={{
-            color: "#5AB4C5",
-          }}
-        />
-        <Typography
-          variant="h6"
-          sx={{
-            color: "#fff",
-            fontWeight: 500,
-            textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-          }}
-        >
-          搜尋中...
-        </Typography>
-      </Backdrop>
+      {loading && <Loading loading={loading} />}
 
       <Box
         sx={{
@@ -141,14 +106,7 @@ const SearchParticipate = (): React.ReactNode => {
           >
             {loading ? (
               <>
-                <CircularProgress
-                  size={16}
-                  thickness={4}
-                  sx={{ color: "#5AB4C5" }}
-                />
-                <Typography variant="body" color="#5AB4C5">
-                  搜尋中
-                </Typography>
+                <Loading loading={loading} />
               </>
             ) : (
               <Typography variant="body" color="#5AB4C5">

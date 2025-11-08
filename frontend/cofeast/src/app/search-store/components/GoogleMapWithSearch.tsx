@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 16:45:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 00:50:54
+ * @LastEditTime: 2025-11-09 05:45:41
  * @FilePath: /frontend/cofeast/src/app/search-store/components/GoogleMapWithSearch.tsx
  */
 "use client";
@@ -10,7 +10,7 @@
 import { getAllSupportPoints, SupportPoint } from "@/api/stores";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import { useEffect, useState } from "react";
-import StoreInfoCard from "./StoreInfoCard";
+import StoreInfoCard from "../../../components/ui/StoreInfoCard";
 
 const containerStyle = {
   width: "100%",

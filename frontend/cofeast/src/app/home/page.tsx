@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 16:20:13
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 04:59:05
+ * @LastEditTime: 2025-11-09 05:38:18
  * @FilePath: /frontend/cofeast/src/app/home/page.tsx
  */
 "use client";
@@ -48,21 +48,21 @@ const HomePage = () => {
           <ActivityCard
             link="/built-event"
             title="我要發起共餐"
-            imageUrl="/images/temp.jpg"
+            imageUrl="/images/event.png"
           />
           <ActivityCard
             link="/search-participate"
             title="我要響應共餐"
-            imageUrl="/images/temp.jpg"
+            imageUrl="/images/participate.png"
           />
         </Box>
         <Typography variant="h2" color="text.primary" my={3}>
-          愛心餐食補給站
+          饗食服務據點
         </Typography>
         <HorizontalCard
           link="/search-store"
-          title="查看愛心據點"
-          imageUrl="/images/temp2.jpg"
+          title="查看饗食服務據點"
+          imageUrl="/images/store.png"
         />
       </Wrapper>
     </ThemeProvider>

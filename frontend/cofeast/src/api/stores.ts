@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 17:10:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 01:01:53
+ * @LastEditTime: 2025-11-09 05:54:50
  * @FilePath: /frontend/cofeast/src/api/stores.ts
  */
 
@@ -36,7 +36,7 @@ const API_BASE_URL = "https://gongcan-api-d4vsmusihq-de.a.run.app/";
  */
 export async function getAllSupportPoints(
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 50
 ): Promise<SupportPointListResponse> {
   try {
     const response = await fetch(
@@ -114,6 +114,37 @@ export async function getSupportStoreById(
     return data;
   } catch (error) {
     console.error("獲取用餐活動詳情錯誤:", error);
+    return null;
+  }
+}
+
+/**
+ * 根據 ID 獲取單個據點詳情（使用 localhost）
+ * @param id 據點 ID
+ */
+export async function getSupportStoreByIdLocalhost(
+  id: string
+): Promise<SupportPoint | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}api/support-points/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "*/*",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("獲取據點詳情錯誤回應:", errorText);
+      throw new Error(`獲取據點詳情失敗: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("獲取據點詳情成功:", data);
+    return data;
+  } catch (error) {
+    console.error("獲取據點詳情錯誤:", error);
     return null;
   }
 }
