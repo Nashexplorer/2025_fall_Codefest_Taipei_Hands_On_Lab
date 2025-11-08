@@ -114,9 +114,7 @@ public class GongCanController : ControllerBase
             meal.Notes,
             meal.Reserved1,
             meal.Reserved2,
-            meal.Reserved3,
-            meal.Reserved4,
-            meal.Reserved5
+            meal.Reserved3
         };
 
         return Ok(result);
@@ -207,9 +205,7 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
         mealEvent.Notes,
         mealEvent.Reserved1,
         mealEvent.Reserved2,
-        mealEvent.Reserved3,
-        mealEvent.Reserved4,
-        mealEvent.Reserved5
+        mealEvent.Reserved3
     };
 
     return Created($"/api/gongcan/meals/{mealEvent.Id}", result);
@@ -251,8 +247,6 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
         mealEvent.Reserved1 = updatedMealEvent.Reserved1;
         mealEvent.Reserved2 = updatedMealEvent.Reserved2;
         mealEvent.Reserved3 = updatedMealEvent.Reserved3;
-        mealEvent.Reserved4 = updatedMealEvent.Reserved4;
-        mealEvent.Reserved5 = updatedMealEvent.Reserved5;
         mealEvent.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -282,9 +276,7 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
             mealEvent.Notes,
             mealEvent.Reserved1,
             mealEvent.Reserved2,
-            mealEvent.Reserved3,
-            mealEvent.Reserved4,
-            mealEvent.Reserved5
+            mealEvent.Reserved3
         };
 
         return Ok(result);
