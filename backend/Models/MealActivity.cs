@@ -67,7 +67,7 @@ public class MealActivity
 
     [Column("tags")]
     [MaxLength(500)]
-    public string? Tags { get; set; } // JSON 格式存储标签数组
+    public string? Tags { get; set; }
 
     [Column("status")]
     [MaxLength(20)]
