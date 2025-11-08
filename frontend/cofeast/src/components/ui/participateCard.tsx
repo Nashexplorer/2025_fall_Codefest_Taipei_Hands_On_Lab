@@ -144,19 +144,20 @@ const ParticipateCard = ({ data }: ParticipateCardProps) => {
               </Typography>
             </Box>
           </Box>
-
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography variant="body" color="text.secondary">
-              響應這場共餐
-            </Typography>
-            <ChevronRightIcon sx={{ color: "text.secondary" }} />
-          </Box>
+          <Link href={`/participate/${data.id}`}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography variant="body" color="text.secondary">
+                響應這場共餐
+              </Typography>
+              <ChevronRightIcon sx={{ color: "text.secondary" }} />
+            </Box>
+          </Link>
         </CardContent>
       </CardActionArea>
     </EntryCard>

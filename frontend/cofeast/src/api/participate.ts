@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-09 01:22:46
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 02:09:45
+ * @LastEditTime: 2025-11-09 03:08:07
  * @FilePath: /frontend/cofeast/src/api/participate.ts
  */
 
@@ -77,4 +77,40 @@ export const getParticipateList = async (
   } catch (error) {
     throw new Error(`error: ${error}`);
   }
+};
+
+// 響應共餐 API 回應介面
+export interface ParticipateResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    participantId?: string;
+    mealId?: string;
+    participantCount?: number;
+  };
+}
+
+export const postParticipate = async (
+  id: string,
+  participantCount: number = 1
+): Promise<ParticipateResponse> => {
+  const url = `${API_BASE_URL}api/gongcan/meals/${id}/participate`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      participantCount,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `API 請求失敗: ${response.status} ${response.statusText}. ${errorText}`
+    );
+  }
+
+  return await response.json();
 };
