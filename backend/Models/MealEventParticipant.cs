@@ -34,5 +34,16 @@ public class MealEventParticipant
     // 導航屬性
     [ForeignKey("MealEventId")]
     public MealEvent? MealEvent { get; set; }
+
+    [Column("phone")]
+    [MaxLength(20)]
+    public string? Phone { get; set; }
+
+    [Column("email")]
+    [MaxLength(255)]
+    public string? Email { get; set; }
+
+    [Column("participant_count")]
+    public int ParticipantCount { get; set; } = 1; // 預設為 1 人
 }
 

@@ -13,6 +13,7 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient();
 
 // 配置 CORS
 builder.Services.AddCors(options =>

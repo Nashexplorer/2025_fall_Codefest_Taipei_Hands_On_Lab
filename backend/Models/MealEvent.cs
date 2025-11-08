@@ -23,10 +23,6 @@ public class MealEvent
     [MaxLength(512)]
     public string? ImageUrl { get; set; }
 
-    [Column("location")]
-    [MaxLength(255)]
-    public string? Location { get; set; }
-
     [Column("latitude", TypeName = "decimal(10,6)")]
     public decimal? Latitude { get; set; }
 
@@ -68,9 +64,6 @@ public class MealEvent
     [Column("updated_at")]
     public DateTime? UpdatedAt { get; set; }
 
-    [Column("tags", TypeName = "json")]
-    public string? Tags { get; set; }
-
     [Column("status", TypeName = "ENUM('open','closed','cancelled','full')")]
     [MaxLength(20)]
     public string Status { get; set; } = "open";
@@ -83,16 +76,28 @@ public class MealEvent
     [MaxLength(20)]
     public string? Phone { get; set; }
 
-    [Column("reserved_1")]
+    [Column("email")]
     [MaxLength(255)]
-    public string? Reserved1 { get; set; }
+    public string? Email { get; set; }
 
-    [Column("reserved_2")]
+    [Column("full_address")]
     [MaxLength(255)]
-    public string? Reserved2 { get; set; }
+    public string? FullAddress { get; set; }
 
-    [Column("reserved_3")]
-    [MaxLength(255)]
-    public string? Reserved3 { get; set; }
+    [Column("city")]
+    [MaxLength(50)]
+    public string? City { get; set; }
+
+    [Column("district")]
+    [MaxLength(50)]
+    public string? District { get; set; }
+
+    [Column("street")]
+    [MaxLength(100)]
+    public string? Street { get; set; }
+
+    [Column("number")]
+    [MaxLength(20)]
+    public string? Number { get; set; }
 }
 

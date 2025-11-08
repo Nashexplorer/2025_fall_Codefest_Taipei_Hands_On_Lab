@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GongCanApi.Data;
 using GongCanApi.Models;
+using System.Text.Json;
 
 namespace GongCanApi.Controllers;
 
@@ -11,10 +12,111 @@ namespace GongCanApi.Controllers;
 public class GongCanController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IConfiguration _configuration;
 
-    public GongCanController(ApplicationDbContext db)
+    public GongCanController(ApplicationDbContext db, IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _db = db;
+        _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
+    }
+
+    /// <summary>
+    /// 生成唯一的共餐活動 ID
+    /// 格式：Event{yyyyMMddHHmmss}{4位隨機數}
+    /// 例如：Event202502151830001234
+    /// </summary>
+    private async Task<string> GenerateMealEventIdAsync()
+    {
+        var random = new Random();
+        string newId;
+        bool exists;
+
+        do
+        {
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var randomSuffix = random.Next(1000, 9999).ToString(); // 4位隨機數
+            newId = $"Event{timestamp}{randomSuffix}";
+
+            exists = await _db.MealEvents.AnyAsync(m => m.Id == newId);
+        } while (exists); // 如果已存在，重新生成
+
+        return newId;
+    }
+
+    /// <summary>
+    /// 組合完整地址
+    /// </summary>
+    private string BuildFullAddress(string? city, string? district, string? street, string? number)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(city))
+            parts.Add(city);
+
+        if (!string.IsNullOrWhiteSpace(district))
+            parts.Add(district);
+
+        if (!string.IsNullOrWhiteSpace(street))
+            parts.Add(street);
+
+        if (!string.IsNullOrWhiteSpace(number))
+            parts.Add(number);
+
+        return string.Join("", parts);
+    }
+
+    /// <summary>
+    /// 根據地址計算經緯度（使用 Google Maps Geocoding API）
+    /// </summary>
+    private async Task<(decimal? latitude, decimal? longitude)> GeocodeAddressAsync(string address)
+    {
+        var apiKey = _configuration["GoogleMaps:ApiKey"];
+
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrWhiteSpace(address))
+        {
+            return (null, null);
+        }
+
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient();
+            var encodedAddress = Uri.EscapeDataString(address);
+            var url = $"https://maps.googleapis.com/maps/api/geocode/json?address={encodedAddress}&key={apiKey}&language=zh-TW&region=tw";
+
+            var response = await httpClient.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<JsonElement>(json);
+
+                if (result.TryGetProperty("status", out var status) && status.GetString() == "OK")
+                {
+                    if (result.TryGetProperty("results", out var results) && results.GetArrayLength() > 0)
+                    {
+                        var firstResult = results[0];
+                        if (firstResult.TryGetProperty("geometry", out var geometry))
+                        {
+                            if (geometry.TryGetProperty("location", out var location))
+                            {
+                                if (location.TryGetProperty("lat", out var lat) && location.TryGetProperty("lng", out var lng))
+                                {
+                                    return ((decimal)lat.GetDouble(), (decimal)lng.GetDouble());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // 如果地理編碼失敗，返回 null
+        }
+
+        return (null, null);
     }
 
     // ============================================
@@ -35,16 +137,19 @@ public class GongCanController : ControllerBase
             .Take(pageSize)
             .ToListAsync();
 
-        // 轉換 tags JSON 字串為陣列
         var result = items.Select(m => new
         {
             m.Id,
             m.Title,
             m.Description,
             m.ImageUrl,
-            m.Location,
             m.Latitude,
             m.Longitude,
+            m.FullAddress,
+            m.City,
+            m.District,
+            m.Street,
+            m.Number,
             m.HostUserId,
             m.Capacity,
             m.CurrentParticipants,
@@ -55,13 +160,10 @@ public class GongCanController : ControllerBase
             m.SignupDeadline,
             m.CreatedAt,
             m.UpdatedAt,
-            Tags = string.IsNullOrEmpty(m.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(m.Tags) ?? new List<string>(),
             m.Status,
             m.Notes,
             m.Phone,
-            m.Reserved1,
-            m.Reserved2,
-            m.Reserved3
+            m.Email
         }).ToList();
 
         return Ok(new
@@ -89,16 +191,19 @@ public class GongCanController : ControllerBase
             return NotFound(new { Message = $"找不到 ID 為 {id} 的共餐活動" });
         }
 
-        // 轉換 tags JSON 字串為陣列
         var result = new
         {
             meal.Id,
             meal.Title,
             meal.Description,
             meal.ImageUrl,
-            meal.Location,
             meal.Latitude,
             meal.Longitude,
+            meal.FullAddress,
+            meal.City,
+            meal.District,
+            meal.Street,
+            meal.Number,
             meal.HostUserId,
             meal.Capacity,
             meal.CurrentParticipants,
@@ -109,12 +214,10 @@ public class GongCanController : ControllerBase
             meal.SignupDeadline,
             meal.CreatedAt,
             meal.UpdatedAt,
-            Tags = string.IsNullOrEmpty(meal.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(meal.Tags) ?? new List<string>(),
             meal.Status,
             meal.Notes,
-            meal.Reserved1,
-            meal.Reserved2,
-            meal.Reserved3
+            meal.Phone,
+            meal.Email
         };
 
         return Ok(result);
@@ -124,143 +227,55 @@ public class GongCanController : ControllerBase
     // 商家相關 API
     // ============================================
 
-/// <summary>
-/// 商家上架共餐活動
-/// </summary>
-[HttpPost("meals")]
-[ProducesResponseType(StatusCodes.Status201Created)]
-[ProducesResponseType(StatusCodes.Status409Conflict)]
-public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
-{
-    // 檢查 ID 是否已存在
-    var exists = await _db.MealEvents
-        .AnyAsync(m => m.Id == mealEvent.Id);
-
-    if (exists)
+    /// <summary>
+    /// 商家上架共餐活動
+    /// </summary>
+    [HttpPost("meals")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
     {
-        return Conflict(new { Message = $"ID {mealEvent.Id} 的共餐活動已存在" });
-    }
+        // 系統自動生成唯一 ID
+        mealEvent.Id = await GenerateMealEventIdAsync();
 
-    // 設定預設值
-    mealEvent.CreatedAt ??= DateTime.UtcNow;
-    mealEvent.UpdatedAt ??= DateTime.UtcNow;
+        // 設定預設值
+        mealEvent.CreatedAt ??= DateTime.UtcNow;
+        mealEvent.UpdatedAt ??= DateTime.UtcNow;
 
-    // status 不可超過 20 字元，預設 "open"
-    if (string.IsNullOrEmpty(mealEvent.Status))
-    {
+        // status 不可超過 20 字元，預設 "open"
         mealEvent.Status = "open";
-    }
-    else if (mealEvent.Status.Length > 20)
-    {
-        mealEvent.Status = mealEvent.Status.Substring(0, 20); // 截斷到 20 個字元
-    }
 
-    // tags 若為空或非合法 JSON，預設為空陣列 JSON
-    if (string.IsNullOrEmpty(mealEvent.Tags))
-    {
-        mealEvent.Tags = "[]";
-    }
-    else
-    {
-        try
+        // 後端自動組合 full_address
+        mealEvent.FullAddress = BuildFullAddress(mealEvent.City, mealEvent.District, mealEvent.Street, mealEvent.Number);
+
+        // 後端自動計算經緯度
+        if (!string.IsNullOrWhiteSpace(mealEvent.FullAddress))
         {
-            // 嘗試解析 JSON，若失敗則改成空陣列
-            var parsed = System.Text.Json.JsonSerializer.Deserialize<List<string>>(mealEvent.Tags);
-            if (parsed == null)
+            var (latitude, longitude) = await GeocodeAddressAsync(mealEvent.FullAddress);
+            if (latitude.HasValue && longitude.HasValue)
             {
-                mealEvent.Tags = "[]";
+                mealEvent.Latitude = latitude.Value;
+                mealEvent.Longitude = longitude.Value;
             }
         }
-        catch
-        {
-            mealEvent.Tags = "[]";
-        }
-    }
 
-    _db.MealEvents.Add(mealEvent);
-    await _db.SaveChangesAsync();
-
-    // 回傳結果（轉換 tags JSON 字串為陣列）
-    var result = new
-    {
-        mealEvent.Id,
-        mealEvent.Title,
-        mealEvent.Description,
-        mealEvent.ImageUrl,
-        mealEvent.Location,
-        mealEvent.Latitude,
-        mealEvent.Longitude,
-        mealEvent.HostUserId,
-        mealEvent.Capacity,
-        mealEvent.CurrentParticipants,
-        mealEvent.DietType,
-        mealEvent.IsDineIn,
-        mealEvent.StartTime,
-        mealEvent.EndTime,
-        mealEvent.SignupDeadline,
-        mealEvent.CreatedAt,
-        mealEvent.UpdatedAt,
-        Tags = System.Text.Json.JsonSerializer.Deserialize<List<string>>(mealEvent.Tags)!,
-        mealEvent.Status,
-        mealEvent.Notes,
-        mealEvent.Reserved1,
-        mealEvent.Reserved2,
-        mealEvent.Reserved3
-    };
-
-    return Created($"/api/gongcan/meals/{mealEvent.Id}", result);
-}
-
-
-    /// <summary>
-    /// 商家更新共餐活動
-    /// </summary>
-    [HttpPut("meals/{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateMealEvent(string id, [FromBody] MealEvent updatedMealEvent)
-    {
-        var mealEvent = await _db.MealEvents
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (mealEvent is null)
-        {
-            return NotFound(new { Message = $"找不到 ID 為 {id} 的共餐活動" });
-        }
-
-        // 更新可編輯的欄位（不允許更新 ID）
-        mealEvent.Title = updatedMealEvent.Title;
-        mealEvent.Description = updatedMealEvent.Description;
-        mealEvent.ImageUrl = updatedMealEvent.ImageUrl;
-        mealEvent.Location = updatedMealEvent.Location;
-        mealEvent.Latitude = updatedMealEvent.Latitude;
-        mealEvent.Longitude = updatedMealEvent.Longitude;
-        mealEvent.Capacity = updatedMealEvent.Capacity;
-        mealEvent.DietType = updatedMealEvent.DietType;
-        mealEvent.IsDineIn = updatedMealEvent.IsDineIn;
-        mealEvent.StartTime = updatedMealEvent.StartTime;
-        mealEvent.EndTime = updatedMealEvent.EndTime;
-        mealEvent.SignupDeadline = updatedMealEvent.SignupDeadline;
-        mealEvent.Tags = updatedMealEvent.Tags;
-        mealEvent.Status = updatedMealEvent.Status;
-        mealEvent.Notes = updatedMealEvent.Notes;
-        mealEvent.Reserved1 = updatedMealEvent.Reserved1;
-        mealEvent.Reserved2 = updatedMealEvent.Reserved2;
-        mealEvent.Reserved3 = updatedMealEvent.Reserved3;
-        mealEvent.UpdatedAt = DateTime.UtcNow;
-
+        _db.MealEvents.Add(mealEvent);
         await _db.SaveChangesAsync();
 
-        // 轉換 tags JSON 字串為陣列
+        // 回傳結果
         var result = new
         {
             mealEvent.Id,
             mealEvent.Title,
             mealEvent.Description,
             mealEvent.ImageUrl,
-            mealEvent.Location,
             mealEvent.Latitude,
             mealEvent.Longitude,
+            mealEvent.FullAddress,
+            mealEvent.City,
+            mealEvent.District,
+            mealEvent.Street,
+            mealEvent.Number,
             mealEvent.HostUserId,
             mealEvent.Capacity,
             mealEvent.CurrentParticipants,
@@ -271,19 +286,17 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
             mealEvent.SignupDeadline,
             mealEvent.CreatedAt,
             mealEvent.UpdatedAt,
-            Tags = string.IsNullOrEmpty(mealEvent.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(mealEvent.Tags) ?? new List<string>(),
             mealEvent.Status,
             mealEvent.Notes,
-            mealEvent.Reserved1,
-            mealEvent.Reserved2,
-            mealEvent.Reserved3
+            mealEvent.Phone,
+            mealEvent.Email
         };
 
-        return Ok(result);
+        return Created($"/api/gongcan/meals/{mealEvent.Id}", result);
     }
 
     /// <summary>
-    /// 商家刪除共餐活動
+    /// 商家刪除共餐活動（將所有參與者狀態改為 cancelled，活動狀態改為 cancelled）
     /// </summary>
     [HttpDelete("meals/{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -298,10 +311,24 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
             return NotFound(new { Message = $"找不到 ID 為 {id} 的共餐活動" });
         }
 
-        _db.MealEvents.Remove(mealEvent);
+        // 將所有參與者狀態改為 cancelled
+        var participants = await _db.MealEventParticipants
+            .Where(p => p.MealEventId == id && p.Status == "confirmed")
+            .ToListAsync();
+
+        foreach (var participant in participants)
+        {
+            participant.Status = "cancelled";
+            participant.UpdatedAt = DateTime.UtcNow;
+        }
+
+        // 將活動狀態改為 cancelled
+        mealEvent.Status = "cancelled";
+        mealEvent.UpdatedAt = DateTime.UtcNow;
+
         await _db.SaveChangesAsync();
 
-        return Ok(new { Message = "刪除成功" });
+        return Ok(new { Message = "活動已取消，所有參與者狀態已更新為 cancelled" });
     }
 
     // ============================================
@@ -338,13 +365,18 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
             return BadRequest(new { Message = "報名已截止" });
         }
 
-        // 檢查是否已額滿
-        var confirmedCount = await _db.MealEventParticipants
-            .CountAsync(p => p.MealEventId == id && p.Status == "confirmed");
-        
-        if (mealEvent.Capacity > 0 && confirmedCount >= mealEvent.Capacity)
+        // 檢查參與人數是否有效
+        var participantCount = request.ParticipantCount > 0 ? request.ParticipantCount : 1;
+
+        // 計算目前已確認的總參與人數（加總所有參與者的 participantCount）
+        var currentTotalParticipants = await _db.MealEventParticipants
+            .Where(p => p.MealEventId == id && p.Status == "confirmed")
+            .SumAsync(p => p.ParticipantCount);
+
+        // 檢查是否已額滿（考慮新增的人數）
+        if (mealEvent.Capacity > 0 && (currentTotalParticipants + participantCount) > mealEvent.Capacity)
         {
-            return BadRequest(new { Message = "活動已額滿" });
+            return BadRequest(new { Message = $"活動剩餘名額不足，目前剩餘 {mealEvent.Capacity - currentTotalParticipants} 個名額" });
         }
 
         // 檢查使用者是否已經預約過（避免重複預約）
@@ -361,6 +393,9 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
             {
                 // 如果之前取消過，重新啟用預約
                 existingParticipant.Status = "confirmed";
+                existingParticipant.Phone = request.Phone ?? "0912345678";
+                existingParticipant.Email = request.Email ?? "chishian.yang@gmail.com";
+                existingParticipant.ParticipantCount = participantCount;
                 existingParticipant.UpdatedAt = DateTime.UtcNow;
             }
         }
@@ -372,17 +407,25 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
                 Id = Guid.NewGuid().ToString(),
                 MealEventId = id,
                 UserId = request.UserId,
+                Phone = request.Phone ?? "0912345678",
+                Email = request.Email ?? "chishian.yang@gmail.com",
+                ParticipantCount = participantCount,
                 Status = "confirmed",
                 CreatedAt = DateTime.UtcNow
             };
             _db.MealEventParticipants.Add(participant);
         }
 
-        // 更新活動的參與人數（從參與者表計算）
-        var newConfirmedCount = await _db.MealEventParticipants
-            .CountAsync(p => p.MealEventId == id && p.Status == "confirmed");
-        mealEvent.CurrentParticipants = newConfirmedCount;
-        
+        // 先保存變更，確保新參與者記錄已寫入資料庫
+        mealEvent.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        // 更新活動的參與人數（加總所有已確認參與者的 participantCount）
+        var newTotalParticipants = await _db.MealEventParticipants
+            .Where(p => p.MealEventId == id && p.Status == "confirmed")
+            .SumAsync(p => p.ParticipantCount);
+        mealEvent.CurrentParticipants = newTotalParticipants;
+
         // 如果已額滿，更新狀態
         if (mealEvent.Capacity > 0 && mealEvent.CurrentParticipants >= mealEvent.Capacity)
         {
@@ -402,6 +445,9 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
             ReservationId = participantRecord?.Id,
             MealEventId = mealEvent.Id,
             UserId = request.UserId,
+            Phone = participantRecord?.Phone,
+            Email = participantRecord?.Email,
+            ParticipantCount = participantRecord?.ParticipantCount ?? 1,
             CurrentParticipants = mealEvent.CurrentParticipants,
             Status = mealEvent.Status
         });
@@ -442,11 +488,15 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
         participant.Status = "cancelled";
         participant.UpdatedAt = DateTime.UtcNow;
 
-        // 更新活動的參與人數（從參與者表計算）
-        var confirmedCount = await _db.MealEventParticipants
-            .CountAsync(p => p.MealEventId == id && p.Status == "confirmed");
-        mealEvent.CurrentParticipants = confirmedCount;
-        
+        // 先保存變更
+        await _db.SaveChangesAsync();
+
+        // 更新活動的參與人數（加總所有已確認參與者的 participantCount）
+        var confirmedTotalParticipants = await _db.MealEventParticipants
+            .Where(p => p.MealEventId == id && p.Status == "confirmed")
+            .SumAsync(p => p.ParticipantCount);
+        mealEvent.CurrentParticipants = confirmedTotalParticipants;
+
         // 如果原本是 full 狀態，改回 open
         if (mealEvent.Status == "full" && mealEvent.CurrentParticipants < mealEvent.Capacity)
         {
@@ -487,8 +537,10 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
 
             foreach (var m in hosted)
             {
+                // 計算總參與人數（加總所有已確認參與者的 participantCount）
                 var participantCount = await _db.MealEventParticipants
-                    .CountAsync(p => p.MealEventId == m.Id && p.Status == "confirmed");
+                    .Where(p => p.MealEventId == m.Id && p.Status == "confirmed")
+                    .SumAsync(p => p.ParticipantCount);
 
                 allResults.Add(new
                 {
@@ -502,9 +554,13 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
                         m.Title,
                         m.Description,
                         m.ImageUrl,
-                        m.Location,
                         m.Latitude,
                         m.Longitude,
+                        m.FullAddress,
+                        m.City,
+                        m.District,
+                        m.Street,
+                        m.Number,
                         m.HostUserId,
                         m.Capacity,
                         m.CurrentParticipants,
@@ -515,9 +571,10 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
                         m.SignupDeadline,
                         m.CreatedAt,
                         m.UpdatedAt,
-                        Tags = string.IsNullOrEmpty(m.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(m.Tags) ?? new List<string>(),
                         m.Status,
-                        m.Notes
+                        m.Notes,
+                        m.Phone,
+                        m.Email
                     },
                     ParticipantCount = participantCount
                 });
@@ -528,9 +585,10 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
         if (type == null || type == "participated")
         {
             var participated = await _db.MealEventParticipants
-                .Where(p => p.UserId == userId && p.Status == "confirmed")
+                .Where(p => p.UserId == userId)
                 .Include(p => p.MealEvent)
-                .OrderByDescending(p => p.CreatedAt)
+                .OrderByDescending(p => p.Status == "confirmed") // confirmed 在最前面
+                .ThenByDescending(p => p.CreatedAt)              // 再依時間新→舊
                 .ToListAsync();
 
             foreach (var p in participated)
@@ -543,15 +601,22 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
                         ReservationId = p.Id,
                         ReservationStatus = p.Status,
                         ReservationCreatedAt = p.CreatedAt,
+                        Phone = p.Phone,
+                        Email = p.Email,
+                        ParticipantCount = p.ParticipantCount,
                         MealEvent = new
                         {
                             p.MealEvent.Id,
                             p.MealEvent.Title,
                             p.MealEvent.Description,
                             p.MealEvent.ImageUrl,
-                            p.MealEvent.Location,
                             p.MealEvent.Latitude,
                             p.MealEvent.Longitude,
+                            p.MealEvent.FullAddress,
+                            p.MealEvent.City,
+                            p.MealEvent.District,
+                            p.MealEvent.Street,
+                            p.MealEvent.Number,
                             p.MealEvent.HostUserId,
                             p.MealEvent.Capacity,
                             p.MealEvent.CurrentParticipants,
@@ -562,11 +627,11 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
                             p.MealEvent.SignupDeadline,
                             p.MealEvent.CreatedAt,
                             p.MealEvent.UpdatedAt,
-                            Tags = string.IsNullOrEmpty(p.MealEvent.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(p.MealEvent.Tags) ?? new List<string>(),
                             p.MealEvent.Status,
-                            p.MealEvent.Notes
-                        },
-                        ParticipantCount = (int?)null
+                            p.MealEvent.Notes,
+                            p.MealEvent.Phone,
+                            p.MealEvent.Email
+                        }
                     });
                 }
             }
@@ -618,6 +683,9 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
             ReservationId = participant.Id,
             MealEventId = participant.MealEventId,
             UserId = participant.UserId,
+            Phone = participant.Phone,
+            Email = participant.Email,
+            ParticipantCount = participant.ParticipantCount,
             Status = participant.Status,
             CreatedAt = participant.CreatedAt,
             UpdatedAt = participant.UpdatedAt,
@@ -627,9 +695,13 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
                 participant.MealEvent.Title,
                 participant.MealEvent.Description,
                 participant.MealEvent.ImageUrl,
-                participant.MealEvent.Location,
                 participant.MealEvent.Latitude,
                 participant.MealEvent.Longitude,
+                participant.MealEvent.FullAddress,
+                participant.MealEvent.City,
+                participant.MealEvent.District,
+                participant.MealEvent.Street,
+                participant.MealEvent.Number,
                 participant.MealEvent.HostUserId,
                 participant.MealEvent.Capacity,
                 participant.MealEvent.CurrentParticipants,
@@ -640,9 +712,10 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
                 participant.MealEvent.SignupDeadline,
                 participant.MealEvent.CreatedAt,
                 participant.MealEvent.UpdatedAt,
-                Tags = string.IsNullOrEmpty(participant.MealEvent.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(participant.MealEvent.Tags) ?? new List<string>(),
                 participant.MealEvent.Status,
-                participant.MealEvent.Notes
+                participant.MealEvent.Notes,
+                participant.MealEvent.Phone,
+                participant.MealEvent.Email
             } : null
         };
 
@@ -653,5 +726,5 @@ public async Task<IActionResult> CreateMealEvent([FromBody] MealEvent mealEvent)
 /// <summary>
 /// 參加共餐活動請求模型
 /// </summary>
-public record ParticipateRequest(string UserId);
+public record ParticipateRequest(string UserId, string? Phone = null, string? Email = null, int ParticipantCount = 1);
 
