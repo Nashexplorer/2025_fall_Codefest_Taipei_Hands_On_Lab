@@ -117,3 +117,34 @@ export async function getSupportStoreById(
     return null;
   }
 }
+
+/**
+ * 根據 ID 獲取單個據點詳情（使用 localhost）
+ * @param id 據點 ID
+ */
+export async function getSupportStoreByIdLocalhost(
+  id: string
+): Promise<SupportPoint | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}api/support-points/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "*/*",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("獲取據點詳情錯誤回應:", errorText);
+      throw new Error(`獲取據點詳情失敗: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("獲取據點詳情成功:", data);
+    return data;
+  } catch (error) {
+    console.error("獲取據點詳情錯誤:", error);
+    return null;
+  }
+}
