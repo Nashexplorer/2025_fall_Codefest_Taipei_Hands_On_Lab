@@ -5,6 +5,7 @@ import { taipeiDistricts } from "@/data";
 import theme from "@/theme";
 import {
   Box,
+  Button,
   Alert,
   Radio,
   RadioGroup,
@@ -353,6 +354,24 @@ const BuiltEventPage = (): React.ReactNode => {
               您的所有隱私資訊將受到保護，僅在報名確認後供聯繫使用，不會公開顯示。
             </Typography>
           </Alert>
+        </FormControl>
+        <FormControl fullWidth sx={{ mt: 4, mb: 6 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            sx={{
+              borderRadius: "12px",
+              py: 1.5,
+              fontSize: "1.1rem",
+              fontWeight: "bold",
+              textTransform: "none",
+            }}
+            onClick={() => {
+            }}
+          >
+            送出表單
+          </Button>
         </FormControl>
       </div>
     </ThemeProvider>
