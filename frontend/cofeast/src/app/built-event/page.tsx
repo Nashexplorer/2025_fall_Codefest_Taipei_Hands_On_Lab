@@ -120,7 +120,6 @@ const BuiltEventPage = (): React.ReactNode => {
         return;
       }
 
-      // 從 address 拆出門牌號，假設格式「路名+號+樓層」或「路名+號」
       const numberMatch = address.match(/\d+號/);
       const number = numberMatch ? numberMatch[0] : "";
 
@@ -130,9 +129,9 @@ const BuiltEventPage = (): React.ReactNode => {
         capacity: parseInt(peopleCount),
         dietType: foodType,
         isDineIn: dineIn === "dinein",
-        startTime: startDateTime?.utcOffset(8).toISOString(),
-        endTime: endDateTime?.utcOffset(8).toISOString(),
-        signupDeadline: dayjs("2025-11-14T23:59:59").utcOffset(8).toISOString(),
+        startTime: startDateTime?.tz("Asia/Taipei").format("YYYY-MM-DDTHH:mm:ss"),
+        endTime: endDateTime?.tz("Asia/Taipei").format("YYYY-MM-DDTHH:mm:ss"),
+        signupDeadline: dayjs("2025-11-14T23:59:59").tz("Asia/Taipei").format("YYYY-MM-DDTHH:mm:ss"),
         notes: notes,
         city: "臺北市",
         district: selectedDistrict,
@@ -160,7 +159,6 @@ const BuiltEventPage = (): React.ReactNode => {
         alert("❌ 建立失敗，請稍後再試");
       }
     } catch (error) {
-      console.error("建立共餐活動失敗：", error);
       alert("建立失敗，請稍後再試");
     }
   };
