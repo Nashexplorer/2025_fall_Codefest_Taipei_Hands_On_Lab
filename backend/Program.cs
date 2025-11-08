@@ -2,6 +2,12 @@ using GongCanApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 在開發環境中啟用 User Secrets（用於存儲敏感資訊如 SMTP 密碼）
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
+
 // 支援 Cloud Run 的 PORT 環境變數
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.ConfigureKestrel(serverOptions =>
@@ -14,6 +20,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<GongCanApi.Services.EmailService>();
 
 // 配置 CORS
 builder.Services.AddCors(options =>

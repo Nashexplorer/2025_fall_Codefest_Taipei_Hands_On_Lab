@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GongCanApi.Data;
 using GongCanApi.Models;
+using GongCanApi.Services;
 using System.Text.Json;
 
 namespace GongCanApi.Controllers;
@@ -14,12 +15,14 @@ public class GongCanController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
+    private readonly EmailService _emailService;
 
-    public GongCanController(ApplicationDbContext db, IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public GongCanController(ApplicationDbContext db, IHttpClientFactory httpClientFactory, IConfiguration configuration, EmailService emailService)
     {
         _db = db;
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     /// <summary>
@@ -314,19 +317,43 @@ public class GongCanController : ControllerBase
         // 將所有參與者狀態改為 cancelled
         var participants = await _db.MealEventParticipants
             .Where(p => p.MealEventId == id && p.Status == "confirmed")
+            .Select(p => new { p.Id, p.Email, p.UserId })
             .ToListAsync();
-
-        foreach (var participant in participants)
-        {
-            participant.Status = "cancelled";
-            participant.UpdatedAt = DateTime.UtcNow;
-        }
 
         // 將活動狀態改為 cancelled
         mealEvent.Status = "cancelled";
         mealEvent.UpdatedAt = DateTime.UtcNow;
 
+        // 更新所有參與者狀態
+        var participantsToUpdate = await _db.MealEventParticipants
+            .Where(p => p.MealEventId == id && p.Status == "confirmed")
+            .ToListAsync();
+
+        foreach (var participant in participantsToUpdate)
+        {
+            participant.Status = "cancelled";
+            participant.UpdatedAt = DateTime.UtcNow;
+        }
+
         await _db.SaveChangesAsync();
+
+        // 發送郵件通知所有參與者（非同步執行，不阻塞回應）
+        _ = Task.Run(async () =>
+        {
+            foreach (var participant in participants)
+            {
+                if (!string.IsNullOrWhiteSpace(participant.Email))
+                {
+                    await _emailService.NotifyEventCancelledByHostAsync(
+                        participant.Email,
+                        participant.UserId, // 使用 UserId 作為名稱，可根據實際需求調整
+                        mealEvent.Title,
+                        mealEvent.Id,
+                        mealEvent.HostUserId
+                    );
+                }
+            }
+        });
 
         return Ok(new { Message = "活動已取消，所有參與者狀態已更新為 cancelled" });
     }
@@ -416,6 +443,9 @@ public class GongCanController : ControllerBase
             _db.MealEventParticipants.Add(participant);
         }
 
+        // 檢查是否在更新前已額滿
+        var wasFullBefore = mealEvent.Status == "full";
+
         // 先保存變更，確保新參與者記錄已寫入資料庫
         mealEvent.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -430,6 +460,22 @@ public class GongCanController : ControllerBase
         if (mealEvent.Capacity > 0 && mealEvent.CurrentParticipants >= mealEvent.Capacity)
         {
             mealEvent.Status = "full";
+            
+            // 如果剛好額滿（之前未額滿），通知團主
+            if (!wasFullBefore && !string.IsNullOrWhiteSpace(mealEvent.Email))
+            {
+                _ = Task.Run(async () =>
+                {
+                    await _emailService.NotifyHostEventFullAsync(
+                        mealEvent.Email,
+                        mealEvent.HostUserId, // 使用 HostUserId 作為名稱，可根據實際需求調整
+                        mealEvent.Title,
+                        mealEvent.Id,
+                        mealEvent.CurrentParticipants,
+                        mealEvent.Capacity
+                    );
+                });
+            }
         }
 
         mealEvent.UpdatedAt = DateTime.UtcNow;
@@ -484,6 +530,9 @@ public class GongCanController : ControllerBase
             return BadRequest(new { Message = "此預約已經取消過了" });
         }
 
+        // 記錄取消的人數
+        var cancelledCount = participant.ParticipantCount;
+
         // 更新參與者狀態為 cancelled
         participant.Status = "cancelled";
         participant.UpdatedAt = DateTime.UtcNow;
@@ -505,6 +554,57 @@ public class GongCanController : ControllerBase
 
         mealEvent.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+
+        // 先取得其他參與者資訊（在 Task.Run 之前）
+        var otherParticipants = await _db.MealEventParticipants
+            .Where(p => p.MealEventId == id && p.Status == "confirmed" && p.Id != participant.Id)
+            .Select(p => new { p.Email, p.UserId })
+            .ToListAsync();
+
+        // 發送郵件通知（非同步執行，不阻塞回應）
+        _ = Task.Run(async () =>
+        {
+            // 1. 通知取消預約的參與者本人
+            if (!string.IsNullOrWhiteSpace(participant.Email))
+            {
+                await _emailService.NotifySelfCancellationAsync(
+                    participant.Email,
+                    participant.UserId, // 使用 UserId 作為名稱，可根據實際需求調整
+                    mealEvent.Title,
+                    mealEvent.Id
+                );
+            }
+
+            // 2. 通知團主
+            if (!string.IsNullOrWhiteSpace(mealEvent.Email))
+            {
+                await _emailService.NotifyHostCancellationAsync(
+                    mealEvent.Email,
+                    mealEvent.HostUserId,
+                    mealEvent.Title,
+                    participant.UserId,
+                    cancelledCount,
+                    mealEvent.CurrentParticipants,
+                    mealEvent.Capacity
+                );
+            }
+
+            // 3. 通知其他參與者
+            foreach (var otherParticipant in otherParticipants)
+            {
+                if (!string.IsNullOrWhiteSpace(otherParticipant.Email))
+                {
+                    await _emailService.NotifyParticipantCancellationAsync(
+                        otherParticipant.Email,
+                        otherParticipant.UserId,
+                        mealEvent.Title,
+                        mealEvent.Id,
+                        mealEvent.CurrentParticipants,
+                        mealEvent.Capacity
+                    );
+                }
+            }
+        });
 
         return Ok(new
         {
