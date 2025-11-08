@@ -52,5 +52,24 @@ namespace GongCanApi.Controllers
                 Data = items
             });
         }
+
+        /// <summary>
+        /// 根據 ID 取得愛心補給站與老人共食點位詳情
+        /// </summary>
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetSupportPointById(int id)
+        {
+            var supportPoint = await _db.SupportPoints
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (supportPoint == null)
+            {
+                return NotFound(new { Message = $"找不到 ID 為 {id} 的愛心補給站或老人共食點位" });
+            }
+
+            return Ok(supportPoint);
+        }
     }
 }
