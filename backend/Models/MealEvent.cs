@@ -34,6 +34,11 @@ public class MealEvent
     [Required]
     public string HostUserId { get; set; } = string.Empty;
 
+    [Column("host_user_name")]
+    [MaxLength(50)]
+    [Required]
+    public string HostUserName { get; set; } = string.Empty;
+
     [Column("capacity")]
     public int Capacity { get; set; } = 0;
 

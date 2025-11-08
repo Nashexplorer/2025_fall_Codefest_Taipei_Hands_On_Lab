@@ -154,6 +154,7 @@ public class GongCanController : ControllerBase
             m.Street,
             m.Number,
             m.HostUserId,
+            m.HostUserName,
             m.Capacity,
             m.CurrentParticipants,
             m.DietType,
