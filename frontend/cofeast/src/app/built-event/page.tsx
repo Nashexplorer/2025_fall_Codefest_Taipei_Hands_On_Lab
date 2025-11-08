@@ -5,6 +5,10 @@ import { taipeiDistricts } from "@/data";
 import theme from "@/theme";
 import {
   Box,
+  Alert,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
   FormControl,
   InputBase,
   MenuItem,
@@ -77,6 +81,8 @@ const BuiltEventPage = (): React.ReactNode => {
   const [startDateTime, setStartDateTime] = useState<Dayjs | null>(null);
   const [endDateTime, setEndDateTime] = useState<Dayjs | null>(null);
   const [address, setAddress] = useState("");
+  const [foodType, setFoodType] = useState("");
+  const [dineIn, setDineIn] = useState("");
 
   const handleDistrictChange = (
     event:
@@ -267,6 +273,86 @@ const BuiltEventPage = (): React.ReactNode => {
               onChange={(e) => setAddress(e.target.value)}
             />
           </Box>
+        </FormControl>
+        <FormControl fullWidth>
+          <Box display="flex" alignItems="center" mt={3} mb={2}>
+            <Typography variant="h3" color="text.primary">
+              共餐活動人數
+            </Typography>
+            <Typography variant="h3" color="primary.main" ml={0.5}>
+              *
+            </Typography>
+          </Box>
+        </FormControl>
+        <FormControl fullWidth>
+          <Box flex={1} mt={3} mb={2}>
+            <StyledInputBase
+              placeholder="請輸入人數"
+              inputProps={{ "aria-label": "text" }}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </Box>
+        </FormControl>
+        <FormControl fullWidth>
+          <Box display="flex" alignItems="center" mt={3} mb={2}>
+            <Typography variant="h3" color="text.primary">
+              飲食型態
+            </Typography>
+            <Typography variant="h3" color="primary.main" ml={0.5}>
+              *
+            </Typography>
+          </Box>
+        </FormControl>
+        <FormControl fullWidth>
+          <RadioGroup row value={foodType} onChange={(e) => setFoodType(e.target.value)}>
+            <FormControlLabel value="meat" control={<Radio />} label="葷" />
+            <FormControlLabel value="vegan" control={<Radio />} label="素" />
+          </RadioGroup>
+        </FormControl>
+        <FormControl fullWidth>
+          <Box display="flex" alignItems="center" mt={3} mb={2}>
+            <Typography variant="h3" color="text.primary">
+              是否開放內用
+            </Typography>
+            <Typography variant="h3" color="primary.main" ml={0.5}>
+              *
+            </Typography>
+          </Box>
+        </FormControl>
+        <FormControl fullWidth>
+          <RadioGroup value={dineIn} onChange={(e) => setDineIn(e.target.value)}>
+            <FormControlLabel value="takeout" control={<Radio />} label="否，僅供外帶" />
+            <FormControlLabel value="dinein" control={<Radio />} label="是，參與人可以在上述「共餐地點」享用餐點" />
+          </RadioGroup>
+        </FormControl>
+        <FormControl fullWidth>
+          <Box display="flex" alignItems="center" mt={3} mb={2}>
+            <Typography variant="h3" color="text.primary">
+              活動備註
+            </Typography>
+            <Typography variant="h3" color="primary.main" ml={0.5}>
+              *
+            </Typography>
+          </Box>
+        </FormControl>
+        <FormControl fullWidth>
+          <Box flex={1} mt={3} mb={2}>
+            <StyledInputBase
+              placeholder="請輸入備註"
+              inputProps={{ "aria-label": "text" }}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+          </Box>
+        </FormControl>
+        <FormControl fullWidth>
+          <Box display="flex" alignItems="center" mt={3} mb={2}></Box>
+          <Alert variant="outlined" severity="info" sx={{ bgcolor: '#423a3aff', color: '#fff', borderRadius: 2 }}>
+            <Typography variant="body2">
+              您的所有隱私資訊將受到保護，僅在報名確認後供聯繫使用，不會公開顯示。
+            </Typography>
+          </Alert>
         </FormControl>
       </div>
     </ThemeProvider>
