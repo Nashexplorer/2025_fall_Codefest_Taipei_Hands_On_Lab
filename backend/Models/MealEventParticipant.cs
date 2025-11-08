@@ -26,7 +26,7 @@ public class MealEventParticipant
     public string Status { get; set; } = "confirmed"; // confirmed, cancelled
 
     [Column("created_at")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(8);
 
     [Column("updated_at")]
     public DateTime? UpdatedAt { get; set; }

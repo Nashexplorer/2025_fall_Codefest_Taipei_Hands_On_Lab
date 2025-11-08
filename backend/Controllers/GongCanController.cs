@@ -70,6 +70,27 @@ public class GongCanController : ControllerBase
     }
 
     /// <summary>
+    /// 計算兩個經緯度之間的距離（使用 Haversine 公式）
+    /// 返回距離（單位：公里）
+    /// </summary>
+    private double CalculateDistance(decimal lat1, decimal lon1, decimal lat2, decimal lon2)
+    {
+        const double R = 6371; // 地球半徑（公里）
+
+        var dLat = (double)(lat2 - lat1) * Math.PI / 180.0;
+        var dLon = (double)(lon2 - lon1) * Math.PI / 180.0;
+
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos((double)lat1 * Math.PI / 180.0) * Math.Cos((double)lat2 * Math.PI / 180.0) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        var distance = R * c;
+
+        return distance;
+    }
+
+    /// <summary>
     /// 根據地址計算經緯度（使用 Google Maps Geocoding API）
     /// </summary>
     private async Task<(decimal? latitude, decimal? longitude)> GeocodeAddressAsync(string address)
@@ -179,6 +200,92 @@ public class GongCanController : ControllerBase
     }
 
     /// <summary>
+    /// 根據地址查詢共餐活動並按距離排序
+    /// </summary>
+    [HttpGet("meals/by-location")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetMealsByLocation([FromQuery] string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            address = "臺北市大安區羅斯福路四段1號";
+        }
+
+        // 取得使用者地址的經緯度
+        var (userLat, userLon) = await GeocodeAddressAsync(address);
+
+        if (!userLat.HasValue || !userLon.HasValue)
+        {
+            return BadRequest(new { Message = "無法取得該地址的經緯度，請確認地址是否正確" });
+        }
+
+        // 取得所有共餐活動
+        var meals = await _db.MealEvents
+            .Where(m => m.Latitude.HasValue && m.Longitude.HasValue) // 只查詢有經緯度的活動
+            .ToListAsync();
+
+        // 計算距離並排序
+        var mealsWithDistance = meals
+            .Select(m => new
+            {
+                MealEvent = m,
+                Distance = CalculateDistance(
+                    userLat.Value,
+                    userLon.Value,
+                    m.Latitude!.Value,
+                    m.Longitude!.Value
+                )
+            })
+            .OrderBy(x => x.Distance) // 按距離由近到遠排序
+            .ToList();
+
+        // 構建回應資料
+        var result = mealsWithDistance.Select(x => new
+        {
+            x.MealEvent.Id,
+            x.MealEvent.Title,
+            x.MealEvent.Description,
+            x.MealEvent.ImageUrl,
+            x.MealEvent.Latitude,
+            x.MealEvent.Longitude,
+            x.MealEvent.FullAddress,
+            x.MealEvent.City,
+            x.MealEvent.District,
+            x.MealEvent.Street,
+            x.MealEvent.Number,
+            x.MealEvent.HostUserId,
+            x.MealEvent.HostUserName,
+            x.MealEvent.Capacity,
+            x.MealEvent.CurrentParticipants,
+            x.MealEvent.DietType,
+            x.MealEvent.IsDineIn,
+            x.MealEvent.StartTime,
+            x.MealEvent.EndTime,
+            x.MealEvent.SignupDeadline,
+            x.MealEvent.CreatedAt,
+            x.MealEvent.UpdatedAt,
+            x.MealEvent.Status,
+            x.MealEvent.Notes,
+            x.MealEvent.Phone,
+            x.MealEvent.Email,
+            Distance = Math.Round(x.Distance, 2) // 距離（公里），保留兩位小數
+        }).ToList();
+
+        return Ok(new
+        {
+            UserAddress = address,
+            UserLocation = new
+            {
+                Latitude = userLat.Value,
+                Longitude = userLon.Value
+            },
+            TotalCount = result.Count,
+            Data = result
+        });
+    }
+
+    /// <summary>
     /// 根據 ID 取得共餐活動
     /// </summary>
     [HttpGet("meals/{id}")]
@@ -208,6 +315,7 @@ public class GongCanController : ControllerBase
             meal.Street,
             meal.Number,
             meal.HostUserId,
+            meal.HostUserName,
             meal.Capacity,
             meal.CurrentParticipants,
             meal.DietType,
@@ -241,12 +349,30 @@ public class GongCanController : ControllerBase
         // 系統自動生成唯一 ID
         mealEvent.Id = await GenerateMealEventIdAsync();
 
-        // 設定預設值
-        mealEvent.CreatedAt ??= DateTime.UtcNow;
-        mealEvent.UpdatedAt ??= DateTime.UtcNow;
+        // 設定預設值（使用台灣時間 UTC+8）
+        mealEvent.CreatedAt ??= DateTime.UtcNow.AddHours(8);
+        mealEvent.UpdatedAt ??= DateTime.UtcNow.AddHours(8);
 
         // status 不可超過 20 字元，預設 "open"
         mealEvent.Status = "open";
+
+        // 設定預設值
+        if (string.IsNullOrWhiteSpace(mealEvent.HostUserId))
+        {
+            mealEvent.HostUserId = "user-123";
+        }
+        if (string.IsNullOrWhiteSpace(mealEvent.HostUserName))
+        {
+            mealEvent.HostUserName = "王大明";
+        }
+        if (string.IsNullOrWhiteSpace(mealEvent.Email))
+        {
+            mealEvent.Email = "chishian.yang@gmail.com";
+        }
+        if (string.IsNullOrWhiteSpace(mealEvent.Phone))
+        {
+            mealEvent.Phone = "0912345678";
+        }
 
         // 後端自動組合 full_address
         mealEvent.FullAddress = BuildFullAddress(mealEvent.City, mealEvent.District, mealEvent.Street, mealEvent.Number);
@@ -280,6 +406,7 @@ public class GongCanController : ControllerBase
             mealEvent.Street,
             mealEvent.Number,
             mealEvent.HostUserId,
+            mealEvent.HostUserName,
             mealEvent.Capacity,
             mealEvent.CurrentParticipants,
             mealEvent.DietType,
@@ -322,7 +449,7 @@ public class GongCanController : ControllerBase
 
         // 將活動狀態改為 cancelled
         mealEvent.Status = "cancelled";
-        mealEvent.UpdatedAt = DateTime.UtcNow;
+        mealEvent.UpdatedAt = DateTime.UtcNow.AddHours(8);
 
         // 更新所有參與者狀態
         var participantsToUpdate = await _db.MealEventParticipants
@@ -332,7 +459,7 @@ public class GongCanController : ControllerBase
         foreach (var participant in participantsToUpdate)
         {
             participant.Status = "cancelled";
-            participant.UpdatedAt = DateTime.UtcNow;
+            participant.UpdatedAt = DateTime.UtcNow.AddHours(8);
         }
 
         await _db.SaveChangesAsync();
@@ -387,7 +514,7 @@ public class GongCanController : ControllerBase
         }
 
         // 檢查報名截止時間
-        if (mealEvent.SignupDeadline.HasValue && mealEvent.SignupDeadline.Value < DateTime.UtcNow)
+        if (mealEvent.SignupDeadline.HasValue && mealEvent.SignupDeadline.Value < DateTime.UtcNow.AddHours(8))
         {
             return BadRequest(new { Message = "報名已截止" });
         }
@@ -443,7 +570,7 @@ public class GongCanController : ControllerBase
                 Email = request.Email ?? "chishian.yang@gmail.com",
                 ParticipantCount = participantCount,
                 Status = "confirmed",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow.AddHours(8)
             };
             _db.MealEventParticipants.Add(participant);
         }
@@ -452,7 +579,7 @@ public class GongCanController : ControllerBase
         var wasFullBefore = mealEvent.Status == "full";
 
         // 先保存變更，確保新參與者記錄已寫入資料庫
-        mealEvent.UpdatedAt = DateTime.UtcNow;
+        mealEvent.UpdatedAt = DateTime.UtcNow.AddHours(8);
         await _db.SaveChangesAsync();
 
         // 更新活動的參與人數（加總所有已確認參與者的 participantCount）
@@ -483,7 +610,7 @@ public class GongCanController : ControllerBase
             }
         }
 
-        mealEvent.UpdatedAt = DateTime.UtcNow;
+        mealEvent.UpdatedAt = DateTime.UtcNow.AddHours(8);
         await _db.SaveChangesAsync();
 
         // 取得參與者記錄
@@ -578,7 +705,7 @@ public class GongCanController : ControllerBase
             mealEvent.Status = "open";
         }
 
-        mealEvent.UpdatedAt = DateTime.UtcNow;
+        mealEvent.UpdatedAt = DateTime.UtcNow.AddHours(8);
         await _db.SaveChangesAsync();
 
         // 先取得其他參與者資訊（在 Task.Run 之前）
