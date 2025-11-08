@@ -58,11 +58,10 @@ public class GongCanController : ControllerBase
             Tags = string.IsNullOrEmpty(m.Tags) ? new List<string>() : System.Text.Json.JsonSerializer.Deserialize<List<string>>(m.Tags) ?? new List<string>(),
             m.Status,
             m.Notes,
+            m.Phone,
             m.Reserved1,
             m.Reserved2,
-            m.Reserved3,
-            m.Reserved4,
-            m.Reserved5
+            m.Reserved3
         }).ToList();
 
         return Ok(new

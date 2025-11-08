@@ -79,6 +79,10 @@ public class MealEvent
     [MaxLength(255)]
     public string? Notes { get; set; }
 
+    [Column("phone")]
+    [MaxLength(20)]
+    public string? Phone { get; set; }
+
     [Column("reserved_1")]
     [MaxLength(255)]
     public string? Reserved1 { get; set; }
@@ -90,13 +94,5 @@ public class MealEvent
     [Column("reserved_3")]
     [MaxLength(255)]
     public string? Reserved3 { get; set; }
-
-    [Column("reserved_4")]
-    [MaxLength(255)]
-    public string? Reserved4 { get; set; }
-
-    [Column("reserved_5")]
-    [MaxLength(255)]
-    public string? Reserved5 { get; set; }
 }
 
