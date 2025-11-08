@@ -1,0 +1,424 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "TaipeiSportsApi",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/parking-status": {
+      "get": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "GetAllParkingStatuses",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "CreateParkingStatus",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaipeiParkingStatus"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipeiParkingStatus"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict"
+          }
+        }
+      }
+    },
+    "/api/parking-status/{id}": {
+      "get": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "GetParkingStatusById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipeiParkingStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/parking-status/{id}/{updateTime}": {
+      "get": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "GetParkingStatusByIdAndTime",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updateTime",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipeiParkingStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "UpdateParkingStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updateTime",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaipeiParkingStatus"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaipeiParkingStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "DeleteParkingStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updateTime",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/parking-status/{id}/history": {
+      "get": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "GetParkingStatusHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/parking-ids": {
+      "get": {
+        "tags": [
+          "TaipeiSportsApi"
+        ],
+        "operationId": "GetAllParkingIds",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "TaipeiParkingStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "maxLength": 50,
+            "type": "string",
+            "nullable": true
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "availableCar": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "availableMotor": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "availableBus": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "availablePregnancy": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "availableHandicap": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "availableHeavyMotor": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "chargeTotal": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "chargeBusy": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "chargeIdle": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "reserved1": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved2": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved3": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved4": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved5": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved6": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved7": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved8": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved9": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          },
+          "reserved10": {
+            "maxLength": 255,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

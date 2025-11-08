@@ -11,7 +11,7 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<TaipeiParkingStatus> TaipeiParkingStatuses { get; set; }
-    public DbSet<MealActivity> MealActivities { get; set; }
+    public DbSet<MealEvent> MealEvents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

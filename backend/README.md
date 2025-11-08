@@ -128,8 +128,12 @@ GET /api/meals/{id}
   "updated_at": "2025-11-08T15:00:00",
   "tags": ["蔬食", "永續", "社區"],
   "status": "open",
-  "price": 0,
-  "notes": "請自備環保餐具"
+  "notes": "請自備環保餐具",
+  "reserved1": null,
+  "reserved2": null,
+  "reserved3": null,
+  "reserved4": null,
+  "reserved5": null
 }
 ```
 
@@ -154,31 +158,35 @@ GET /api/meals/{id}
 
 **注意**: 此表使用複合主鍵 (Id + UpdateTime)
 
-### MealActivity
+### MealEvent
 
 | 欄位名稱 | 類型 | 說明 |
 |---------|------|------|
 | Id | string | 共餐活動 ID (主鍵) |
-| Title | string | 活動標題 |
+| Title | string | 活動標題 (必填) |
 | Description | string? | 活動描述 |
 | ImageUrl | string? | 活動圖片 URL |
 | Location | string? | 活動地點 |
-| Latitude | decimal? | 緯度 |
-| Longitude | decimal? | 經度 |
-| HostUserId | string? | 主辦人用戶 ID |
-| Capacity | int? | 活動容量 |
-| CurrentParticipants | int? | 目前參與人數 |
-| DietType | string? | 飲食類型（如：素食、葷食等） |
-| IsDineIn | bool? | 是否為內用 |
-| StartTime | DateTime? | 開始時間 |
-| EndTime | DateTime? | 結束時間 |
+| Latitude | decimal(10,6)? | 緯度 |
+| Longitude | decimal(10,6)? | 經度 |
+| HostUserId | string | 主辦人用戶 ID (必填) |
+| Capacity | int | 活動人數上限 (預設值: 0) |
+| CurrentParticipants | int | 目前參與人數 (預設值: 0) |
+| DietType | string? | 飲食習慣 (例如：素食、葷食) |
+| IsDineIn | bool | 是否可內用 (預設值: true) |
+| StartTime | DateTime | 活動開始時間 (必填) |
+| EndTime | DateTime | 活動結束時間 (必填) |
 | SignupDeadline | DateTime? | 報名截止時間 |
 | CreatedAt | DateTime? | 建立時間 |
 | UpdatedAt | DateTime? | 更新時間 |
-| Tags | string? | 標籤（JSON 格式陣列） |
-| Status | string? | 狀態（如：open、closed 等） |
-| Price | decimal? | 價格 |
+| Tags | string? | 活動標籤 (JSON 格式陣列) |
+| Status | string | 活動狀態 (open, closed, cancelled, full，預設值: open) |
 | Notes | string? | 備註 |
+| Reserved1 | string? | 預留欄位 1 |
+| Reserved2 | string? | 預留欄位 2 |
+| Reserved3 | string? | 預留欄位 3 |
+| Reserved4 | string? | 預留欄位 4 |
+| Reserved5 | string? | 預留欄位 5 |
 
 ## Swagger UI
 
