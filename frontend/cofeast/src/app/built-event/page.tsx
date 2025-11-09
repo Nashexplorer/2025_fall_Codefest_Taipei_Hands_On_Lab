@@ -1,5 +1,6 @@
 "use client";
 import Announcement from "@/components/ui/Announcement";
+import StatusDialog from "@/components/ui/StatusDialog";
 import { SelectedDropdown } from "@/components/ui/SelectedDropdown";
 import { taipeiDistricts } from "@/data";
 import theme from "@/theme";
@@ -25,6 +26,7 @@ import React, { useState } from "react";
 import { createMealEvent } from "@/api/meals";
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { useRouter } from "next/navigation";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -83,6 +85,7 @@ const StyledDateTimePicker = styled(DateTimePicker)`
 `;
 
 const BuiltEventPage = (): React.ReactNode => {
+  const router = useRouter();
   const [selectedDistrict, setSelectedDistrict] = useState("All");
   const [street, setStreet] = useState("");
   const [startDateTime, setStartDateTime] = useState<Dayjs | null>(null);
@@ -95,12 +98,23 @@ const BuiltEventPage = (): React.ReactNode => {
   const [peopleCount, setPeopleCount] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogSeverity, setDialogSeverity] = useState<"success" | "error">("success");
+
   const handleDistrictChange = (
     event:
       | React.ChangeEvent<HTMLInputElement>
       | (Event & { target: { value: unknown; name: string } })
   ) => {
     setSelectedDistrict(event.target.value as string);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    if (dialogSeverity === "success") {
+      router.push("/home");
+    }
   };
 
   const handleSubmit = async () => {
@@ -116,7 +130,9 @@ const BuiltEventPage = (): React.ReactNode => {
         !foodType ||
         !dineIn
       ) {
-        alert("請填寫所有必填欄位！");
+        setDialogMessage("請填寫所有必填欄位！");
+        setDialogSeverity("error");
+        setDialogOpen(true);
         return;
       }
 
@@ -142,7 +158,9 @@ const BuiltEventPage = (): React.ReactNode => {
       const result = await createMealEvent(payload);
 
       if (result) {
-        alert("✅ 共餐活動建立成功！");
+        setDialogMessage("共餐活動建立成功！");
+        setDialogSeverity("success");
+        setDialogOpen(true);
         // 清空表單
         setTitle("");
         setSummary("");
@@ -156,10 +174,15 @@ const BuiltEventPage = (): React.ReactNode => {
         setDineIn("");
         setNotes("");
       } else {
-        alert("❌ 建立失敗，請稍後再試");
+        setDialogMessage("建立失敗，請稍後再試");
+        setDialogSeverity("error");
+        setDialogOpen(true);
       }
     } catch (error) {
-      alert("建立失敗，請稍後再試");
+      console.error("建立共餐活動失敗：", error);
+      setDialogMessage("建立失敗，請稍後再試");
+      setDialogSeverity("error");
+      setDialogOpen(true);
     }
   };
 
@@ -430,6 +453,12 @@ const BuiltEventPage = (): React.ReactNode => {
             送出表單
           </Button>
         </FormControl>
+        <StatusDialog
+          dialogOpen={dialogOpen}
+          handleCloseDialog={handleCloseDialog}
+          dialogMessage={dialogMessage}
+          dialogSeverity={dialogSeverity}
+        />
       </div>
     </ThemeProvider>
   );

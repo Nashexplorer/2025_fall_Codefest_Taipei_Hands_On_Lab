@@ -106,9 +106,12 @@ export const postParticipate = async (
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    // const errorText = await response.text();
+    const data = await response.json();
+    const errorText = data.message;
     throw new Error(
-      `API 請求失敗: ${response.status} ${response.statusText}. ${errorText}`
+      // `API 請求失敗: ${response.status} ${response.statusText}. ${errorText}`
+      `${errorText}`
     );
   }
 
