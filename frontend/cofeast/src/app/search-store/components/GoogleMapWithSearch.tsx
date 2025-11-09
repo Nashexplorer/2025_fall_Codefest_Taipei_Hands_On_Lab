@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 16:45:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 05:45:41
+ * @LastEditTime: 2025-11-09 09:37:20
  * @FilePath: /frontend/cofeast/src/app/search-store/components/GoogleMapWithSearch.tsx
  */
 "use client";
@@ -80,8 +80,8 @@ const GoogleMapWithSearch = () => {
               icon={{
                 url:
                   selectedStore?.id === store.id
-                    ? "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                    : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                    ? "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                    : "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
               }}
             />
           ))}
