@@ -2,26 +2,21 @@
  * @Author: Auto
  * @Date: 2025-01-XX
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-01-XX
+ * @LastEditTime: 2025-11-09 08:16:33
  * @FilePath: /frontend/cofeast/src/app/search-store-detail/[id]/page.tsx
  */
 "use client";
 
 import { getSupportStoreByIdLocalhost, SupportPoint } from "@/api/stores";
 import theme from "@/theme";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import CloseIcon from "@mui/icons-material/Close";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PhoneIcon from "@mui/icons-material/Phone";
 import {
   Alert,
-  AppBar,
   Box,
   CircularProgress,
-  IconButton,
   Link,
   ThemeProvider,
-  Toolbar,
   Typography,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
@@ -107,51 +102,6 @@ const SearchStoreDetailPage = (): React.ReactNode => {
           backgroundColor: "#fff",
         }}
       >
-        {/* Header with Teal Background */}
-        <AppBar
-          position="static"
-          sx={{
-            backgroundColor: theme.palette.primary.main,
-            boxShadow: "none",
-          }}
-        >
-          <Toolbar
-            sx={{
-              minHeight: "56px !important",
-              padding: "8px 16px",
-            }}
-          >
-            <IconButton
-              edge="start"
-              color="inherit"
-              onClick={handleBack}
-              sx={{ mr: 1 }}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{
-                flexGrow: 1,
-                textAlign: "center",
-                color: "#fff",
-                fontWeight: 500,
-              }}
-            >
-              {storeData.orgName}
-            </Typography>
-            <IconButton
-              edge="end"
-              color="inherit"
-              onClick={handleClose}
-              sx={{ ml: 1 }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-
         {/* Main Content */}
         <Box sx={{ padding: "16px" }}>
           {/* Page Title */}
@@ -235,9 +185,6 @@ const SearchStoreDetailPage = (): React.ReactNode => {
                 </Link>
               </Box>
             )}
-
-            {/* Phone Number 2 / Fax - Not in API, so we'll skip for now */}
-            {/* Contact Person - Not in API, so we'll skip for now */}
           </Box>
 
           {/* Information Box */}
@@ -294,4 +241,3 @@ const SearchStoreDetailPage = (): React.ReactNode => {
 };
 
 export default SearchStoreDetailPage;
-
