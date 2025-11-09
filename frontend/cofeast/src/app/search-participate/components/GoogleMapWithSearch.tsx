@@ -83,8 +83,8 @@ const GoogleMapWithSearch = ({ participateList }: GoogleMapWithSearchProps) => {
               icon={{
                 url:
                   selectedStore?.id === item.id
-                    ? "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                    : "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                    ? "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                    : "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
               }}
             />
           ))}

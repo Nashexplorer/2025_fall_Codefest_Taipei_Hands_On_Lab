@@ -2,7 +2,7 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-08 18:12:53
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 05:49:46
+ * @LastEditTime: 2025-11-09 09:39:26
  * @FilePath: /frontend/cofeast/src/app/search-participate/page.tsx
  */
 "use client";
@@ -87,7 +87,7 @@ const SearchParticipate = (): React.ReactNode => {
               flex: 1,
             }}
           >
-            饗食服務據點
+            共餐響應據點
           </Typography>
 
           <Box
