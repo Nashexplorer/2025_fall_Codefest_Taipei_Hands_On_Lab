@@ -1,19 +1,20 @@
 "use client";
+import { createMealEvent } from "@/api/meals";
 import Announcement from "@/components/ui/Announcement";
-import StatusDialog from "@/components/ui/StatusDialog";
 import { SelectedDropdown } from "@/components/ui/SelectedDropdown";
+import StatusDialog from "@/components/ui/StatusDialog";
 import { taipeiDistricts } from "@/data";
 import theme from "@/theme";
 import {
+  Alert,
   Box,
   Button,
-  Alert,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
   FormControl,
+  FormControlLabel,
   InputBase,
   MenuItem,
+  Radio,
+  RadioGroup,
   styled,
   ThemeProvider,
   Typography,
@@ -22,11 +23,10 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs, { Dayjs } from "dayjs";
-import React, { useState } from "react";
-import { createMealEvent } from "@/api/meals";
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -100,7 +100,9 @@ const BuiltEventPage = (): React.ReactNode => {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
-  const [dialogSeverity, setDialogSeverity] = useState<"success" | "error">("success");
+  const [dialogSeverity, setDialogSeverity] = useState<"success" | "error">(
+    "success"
+  );
 
   const handleDistrictChange = (
     event:
@@ -145,14 +147,18 @@ const BuiltEventPage = (): React.ReactNode => {
         capacity: parseInt(peopleCount),
         dietType: foodType,
         isDineIn: dineIn === "dinein",
-        startTime: startDateTime?.tz("Asia/Taipei").format("YYYY-MM-DDTHH:mm:ss"),
+        startTime: startDateTime
+          ?.tz("Asia/Taipei")
+          .format("YYYY-MM-DDTHH:mm:ss"),
         endTime: endDateTime?.tz("Asia/Taipei").format("YYYY-MM-DDTHH:mm:ss"),
-        signupDeadline: dayjs("2025-11-14T23:59:59").tz("Asia/Taipei").format("YYYY-MM-DDTHH:mm:ss"),
+        signupDeadline: dayjs("2025-11-14T23:59:59")
+          .tz("Asia/Taipei")
+          .format("YYYY-MM-DDTHH:mm:ss"),
         notes: notes,
         city: "臺北市",
         district: selectedDistrict,
         street: street,
-        number: number
+        number: number,
       };
 
       const result = await createMealEvent(payload);
@@ -387,7 +393,11 @@ const BuiltEventPage = (): React.ReactNode => {
           </Box>
         </FormControl>
         <FormControl fullWidth>
-          <RadioGroup row value={foodType} onChange={(e) => setFoodType(e.target.value)}>
+          <RadioGroup
+            row
+            value={foodType}
+            onChange={(e) => setFoodType(e.target.value)}
+          >
             <FormControlLabel value="meat" control={<Radio />} label="葷" />
             <FormControlLabel value="vegan" control={<Radio />} label="素" />
           </RadioGroup>
@@ -403,9 +413,20 @@ const BuiltEventPage = (): React.ReactNode => {
           </Box>
         </FormControl>
         <FormControl fullWidth>
-          <RadioGroup value={dineIn} onChange={(e) => setDineIn(e.target.value)}>
-            <FormControlLabel value="takeout" control={<Radio />} label="否，僅供外帶" />
-            <FormControlLabel value="dinein" control={<Radio />} label="是，參與人可以在上述「共餐地點」享用餐點" />
+          <RadioGroup
+            value={dineIn}
+            onChange={(e) => setDineIn(e.target.value)}
+          >
+            <FormControlLabel
+              value="takeout"
+              control={<Radio />}
+              label="否，僅供外帶"
+            />
+            <FormControlLabel
+              value="dinein"
+              control={<Radio />}
+              label="是，參與人可以在上述「共餐地點」享用餐點"
+            />
           </RadioGroup>
         </FormControl>
         <FormControl fullWidth>
@@ -430,7 +451,11 @@ const BuiltEventPage = (): React.ReactNode => {
         </FormControl>
         <FormControl fullWidth>
           <Box display="flex" alignItems="center" mt={3} mb={2}></Box>
-          <Alert variant="outlined" severity="info" sx={{ bgcolor: '#090909ff', color: '#fff', borderRadius: 2 }}>
+          <Alert
+            variant="outlined"
+            severity="info"
+            sx={{ bgcolor: "white", color: "#738995", borderRadius: 2 }}
+          >
             <Typography variant="body2">
               您的所有隱私資訊將受到保護，僅在報名確認後供聯繫使用，不會公開顯示。
             </Typography>
@@ -439,14 +464,13 @@ const BuiltEventPage = (): React.ReactNode => {
         <FormControl fullWidth sx={{ mt: 4, mb: 6 }}>
           <Button
             variant="contained"
-            color="primary"
             size="large"
             sx={{
               borderRadius: "12px",
               py: 1.5,
               fontSize: "1.1rem",
-              fontWeight: "bold",
               textTransform: "none",
+              color: "white",
             }}
             onClick={handleSubmit}
           >
