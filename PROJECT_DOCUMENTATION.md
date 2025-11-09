@@ -431,7 +431,7 @@ API_SECRET_KEY=your-secret-key-here
 - 沒有此前綴的變數僅在伺服器端可用
 - 修改環境變數後需重新啟動開發伺服器
 
-#### TypeScript 路徑別名
+#### TypeScript 路徑
 
 專案已預設配置路徑別名，可簡化 import 路徑：
 
