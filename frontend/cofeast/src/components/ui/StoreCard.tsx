@@ -2,9 +2,11 @@
  * @Author: Fangyu Kung
  * @Date: 2025-11-09
  * @LastEditors: Do not edit
- * @LastEditTime: 2025-11-09 05:55:42
+ * @LastEditTime: 2025-11-09 08:17:00
  * @FilePath: /frontend/cofeast/src/components/ui/StoreCard.tsx
  */
+"use client";
+
 import { SupportPoint } from "@/api/stores";
 import theme from "@/theme";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -13,10 +15,12 @@ import {
   Box,
   CardActionArea,
   CardContent,
+  CardMedia,
   Link,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import EntryCard from "./EntryCard";
 
 interface StoreCardProps {
@@ -24,9 +28,31 @@ interface StoreCardProps {
 }
 
 const StoreCard = ({ data }: StoreCardProps) => {
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    router.push(`/search-store-detail/${data.id}`);
+  };
+
   return (
     <EntryCard>
-      <CardActionArea onClick={() => console.log("click", data)}>
+      <CardActionArea onClick={handleCardClick}>
+        <Box
+          sx={{
+            borderRadius: "8px",
+            overflow: "hidden",
+            margin: "0px 16px ",
+          }}
+        >
+          <CardMedia
+            sx={{
+              width: "100%",
+            }}
+            component="img"
+            image="/images/store.png"
+            alt={data.orgName}
+          />
+        </Box>
         <CardContent>
           <Box
             sx={{
@@ -36,12 +62,6 @@ const StoreCard = ({ data }: StoreCardProps) => {
               mb: 1,
             }}
           >
-            <Image
-              src="/images/store.png"
-              alt="store icon"
-              width={24}
-              height={24}
-            />
             <Typography
               variant="h3SemiBold"
               component="div"
@@ -50,19 +70,6 @@ const StoreCard = ({ data }: StoreCardProps) => {
               {data.orgName}
             </Typography>
           </Box>
-
-          {/* 組織單位 */}
-          {data.orgGroupName && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mb: 1, ml: 4 }}
-            >
-              {data.orgGroupName}
-            </Typography>
-          )}
-
-          {/* 地址 */}
           <Box
             sx={{
               display: "flex",

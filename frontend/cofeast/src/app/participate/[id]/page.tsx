@@ -8,6 +8,7 @@
 "use client";
 import { postParticipate } from "@/api/participate";
 import ColorButton from "@/components/ui/ColorButton";
+import StatusDialog from "@/components/ui/StatusDialog";
 import theme from "@/theme";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PeopleIcon from "@mui/icons-material/People";
@@ -17,8 +18,6 @@ import {
   Alert,
   Box,
   CircularProgress,
-  Dialog,
-  DialogContent,
   Link,
   ThemeProvider,
   Typography,
@@ -26,6 +25,7 @@ import {
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface EventData {
   city: string;
@@ -49,6 +49,7 @@ interface EventData {
 }
 
 const ParticipatePage = (): React.ReactNode => {
+  const router = useRouter();
   const params = useParams();
   const eventId = params.id;
 
@@ -58,9 +59,7 @@ const ParticipatePage = (): React.ReactNode => {
   const [participating, setParticipating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
-  const [dialogSeverity, setDialogSeverity] = useState<"success" | "error">(
-    "success"
-  );
+  const [dialogSeverity, setDialogSeverity] = useState<"success" | "error">("success");
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -200,7 +199,12 @@ const ParticipatePage = (): React.ReactNode => {
             minHeight: "100vh",
           }}
         >
-          <Alert severity="error">{error || "找不到活動資料"}</Alert>
+          <StatusDialog
+            dialogOpen={true}
+            handleCloseDialog={handleCloseDialog}
+            dialogMessage="找不到活動資料"
+            dialogSeverity="error"
+          />
         </Box>
       </ThemeProvider>
     );
@@ -466,81 +470,12 @@ const ParticipatePage = (): React.ReactNode => {
           </ColorButton>
         </Box>
 
-        <Dialog
-          open={dialogOpen}
-          onClose={handleCloseDialog}
-          maxWidth="xs"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: "16px",
-              padding: "24px",
-              backgroundColor: "#fff",
-            },
-          }}
-          sx={{
-            "& .MuiBackdrop-root": {
-              backgroundColor: "rgba(0, 0, 0, 0.6)",
-            },
-          }}
-        >
-          <DialogContent sx={{ padding: 0 }}>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              <Box
-                sx={{
-                  width: "56px",
-                  height: "56px",
-                  borderRadius: "50%",
-                  backgroundColor:
-                    dialogSeverity === "success" ? "#EDF8FA" : "#FEF3F2",
-                  border: `2px solid ${
-                    dialogSeverity === "success"
-                      ? theme.palette.primary.main
-                      : theme.palette.error.main
-                  }`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Typography
-                  sx={{
-                    color:
-                      dialogSeverity === "success"
-                        ? theme.palette.primary.main
-                        : theme.palette.error.main,
-                    fontWeight: 700,
-                    fontSize: "2rem",
-                  }}
-                >
-                  {dialogSeverity === "success" ? "✓" : "!"}
-                </Typography>
-              </Box>
-
-              <Typography
-                variant="h3SemiBold"
-                color="text.primary"
-                sx={{ textAlign: "center" }}
-              >
-                {dialogMessage}
-              </Typography>
-
-              <ColorButton
-                onClick={handleCloseDialog}
-                sx={{ width: "100%", mt: 1 }}
-              >
-                確定
-              </ColorButton>
-            </Box>
-          </DialogContent>
-        </Dialog>
+        <StatusDialog
+          dialogOpen={dialogOpen}
+          handleCloseDialog={handleCloseDialog}
+          dialogMessage={dialogMessage}
+          dialogSeverity={dialogSeverity}
+        />
       </Box>
     </ThemeProvider>
   );
