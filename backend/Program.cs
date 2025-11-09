@@ -27,7 +27,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhost3001", policy =>
     {
-        policy.WithOrigins("http://localhost:3001", "https://localhost:3001")
+        policy.WithOrigins("http://localhost:3001", "https://localhost:3001", "http://10.0.2.2:3001", "https://10.0.2.2:3001"
+            , "https://2025-fall-codefest-taipei-hands-on-lab-w8n6-f2sxa98nn.vercel.app", "http://172.31.128.1:3001")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
